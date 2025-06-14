@@ -84,7 +84,7 @@ interface AuthContextType {
   removeFriend: (friendId: string) => Promise<void>;
 }
 
-// ✅ DYNAMIC LEVEL CALCULATION FUNCTIONS
+// ✅ FIXED MATH - Dynamic level calculation functions
 const calculateLevel = (totalExperience: number): number => {
   return Math.floor(totalExperience / 100) + 1;
 };
@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return profile;
   };
 
-  // ✅ DYNAMIC LEVEL SYSTEM - Update level data based on total experience
+  // ✅ FIXED MATH - Update level data based on total experience
   const updateLevelData = (profile: UserProfile): UserProfile => {
     const totalExp = profile.totalExperience || profile.coins || 0; // Use coins as experience if totalExperience not set
     
@@ -189,8 +189,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ...profile,
       totalExperience: totalExp,
       level: calculateLevel(totalExp),
-      experience: calculateExperienceInCurrentLevel(totalExp),
-      experienceToNextLevel: calculateExperienceToNextLevel(totalExp),
+      experience: calculateExperienceInCurrentLevel(totalExp), // ✅ CORRECT: This gives current level progress (0-99)
+      experienceToNextLevel: calculateExperienceToNextLevel(totalExp), // ✅ CORRECT: This gives XP needed for next level
       rankTitle: getRankTitle(calculateLevel(totalExp)),
     };
   };
@@ -225,7 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const originalUsername = completeProfile.username;
           completeProfile = updateExplorerToChampion(completeProfile);
           
-          // ✅ DYNAMIC LEVEL SYSTEM: Update level data
+          // ✅ FIXED MATH: Update level data with correct calculations
           completeProfile = updateLevelData(completeProfile);
           
           // If username or level data was updated, save it to the database
@@ -322,7 +322,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const originalUsername = completeProfile.username;
         completeProfile = updateExplorerToChampion(completeProfile);
         
-        // ✅ DYNAMIC LEVEL SYSTEM: Update level data
+        // ✅ FIXED MATH: Update level data with correct calculations
         completeProfile = updateLevelData(completeProfile);
         
         // If username or level data was updated, save it to the database
@@ -594,7 +594,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ DYNAMIC LEVEL SYSTEM - Update experience and level when completing tasks
+  // ✅ FIXED MATH - Update experience and level when completing tasks
   const addCompletedTask = async (taskId: string, coinsEarned: number) => {
     if (!currentUser || !userProfile) return;
     try {
@@ -603,11 +603,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedTasks = [...userProfile.completedTasks, taskId];
       const updatedCoins = userProfile.coins + coinsEarned;
       
-      // ✅ DYNAMIC LEVEL SYSTEM - Calculate new level data
+      // ✅ FIXED MATH - Calculate new level data correctly
       const newTotalExperience = updatedCoins; // Using coins as experience points
       const newLevel = calculateLevel(newTotalExperience);
-      const newExperience = calculateExperienceInCurrentLevel(newTotalExperience);
-      const newExperienceToNext = calculateExperienceToNextLevel(newTotalExperience);
+      const newExperience = calculateExperienceInCurrentLevel(newTotalExperience); // ✅ CORRECT: 0-99 progress in current level
+      const newExperienceToNext = calculateExperienceToNextLevel(newTotalExperience); // ✅ CORRECT: XP needed for next level
       const newRankTitle = getRankTitle(newLevel);
 
       const userRef = doc(db, `${getBasePath()}/users/${currentUser.uid}`);

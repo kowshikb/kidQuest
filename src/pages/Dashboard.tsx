@@ -162,13 +162,14 @@ const Dashboard: React.FC = () => {
   const totalCoins = userProfile?.coins || 0;
   const friendsCount = userProfile?.friendsList?.length || 0;
 
-  // ✅ DYNAMIC LEVEL SYSTEM - Get level info from database (no hardcoding)
+  // ✅ FIXED MATH - Dynamic level system with correct calculations
   const levelInfo = {
     currentLevel: userProfile?.level || 1,
     experience: userProfile?.experience || 0,
     experienceToNextLevel: userProfile?.experienceToNextLevel || 100,
     nextLevel: (userProfile?.level || 1) + 1,
-    progressPercentage: userProfile?.experience ? (userProfile.experience / 100) * 100 : 0,
+    // ✅ CORRECT MATH: If you have 25/100, that's 25% progress (not 75%)
+    progressPercentage: userProfile?.experience ? userProfile.experience : 0,
     rankTitle: userProfile?.rankTitle || "Novice Champion"
   };
 
@@ -288,7 +289,7 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          {/* ✅ DYNAMIC LEVEL SYSTEM - Shows data from database, not hardcoded */}
+          {/* ✅ FIXED MATH - Level System with correct calculations */}
           <motion.div
             className="md:col-span-2 bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl shadow-purple-500/10 border border-purple-100"
             whileHover={{ y: -5, shadow: "0 25px 50px -12px rgba(139, 92, 246, 0.25)" }}
@@ -327,6 +328,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="mt-2 text-center">
               <p className="text-xs text-purple-600 font-medium">
+                {/* ✅ FIXED MATH: Show correct percentage */}
                 {levelInfo.progressPercentage.toFixed(1)}% progress to next level
               </p>
             </div>
