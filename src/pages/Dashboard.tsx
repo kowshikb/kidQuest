@@ -162,14 +162,30 @@ const Dashboard: React.FC = () => {
   const totalCoins = userProfile?.coins || 0;
   const friendsCount = userProfile?.friendsList?.length || 0;
 
-  // Calculate user level based on coins
-  const getUserLevel = (coins: number) => {
-    return Math.floor(coins / 100) + 1;
+  // ✅ IMPROVED LEVEL SYSTEM - More meaningful and intuitive
+  const getLevelInfo = (coins: number) => {
+    const currentLevel = Math.floor(coins / 100) + 1;
+    const coinsInCurrentLevel = coins % 100;
+    const coinsNeededForNextLevel = 100 - coinsInCurrentLevel;
+    const progressPercentage = (coinsInCurrentLevel / 100) * 100;
+    
+    return {
+      currentLevel,
+      coinsInCurrentLevel,
+      coinsNeededForNextLevel,
+      progressPercentage,
+      nextLevel: currentLevel + 1
+    };
   };
 
-  // Calculate progress to next level
-  const getProgressToNextLevel = (coins: number) => {
-    return (coins % 100) / 100;
+  // Get rank title based on level
+  const getRankTitle = (level: number) => {
+    if (level >= 50) return "Legendary Master";
+    if (level >= 30) return "Elite Champion";
+    if (level >= 20) return "Grand Champion";
+    if (level >= 10) return "Champion";
+    if (level >= 5) return "Rising Star";
+    return "Novice Champion";
   };
 
   // Find a recommended quest - only show if themes are loaded and available
@@ -179,8 +195,8 @@ const Dashboard: React.FC = () => {
       )
     : null;
 
-  const userLevel = getUserLevel(totalCoins);
-  const progressToNext = getProgressToNextLevel(totalCoins);
+  const levelInfo = getLevelInfo(totalCoins);
+  const rankTitle = getRankTitle(levelInfo.currentLevel);
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -291,7 +307,7 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          {/* Level & Progress */}
+          {/* ✅ IMPROVED Level & Progress - Now shows meaningful progression */}
           <motion.div
             className="md:col-span-2 bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl shadow-purple-500/10 border border-purple-100"
             whileHover={{ y: -5, shadow: "0 25px 50px -12px rgba(139, 92, 246, 0.25)" }}
@@ -303,22 +319,35 @@ const Dashboard: React.FC = () => {
                   <Star size={24} className="text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-purple-500 font-medium">Champion Level</p>
-                  <p className="text-3xl font-bold text-purple-900">{userLevel}</p>
+                  <p className="text-sm text-purple-500 font-medium">{rankTitle}</p>
+                  <p className="text-3xl font-bold text-purple-900">Level {levelInfo.currentLevel}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Next Level</p>
-                <p className="text-lg font-bold text-purple-700">{totalCoins % 100}/100</p>
+                <p className="text-sm text-gray-500">To Level {levelInfo.nextLevel}</p>
+                <p className="text-lg font-bold text-purple-700">
+                  {levelInfo.coinsInCurrentLevel}/100
+                </p>
+                <p className="text-xs text-gray-400">
+                  {levelInfo.coinsNeededForNextLevel} coins needed
+                </p>
               </div>
             </div>
             <div className="w-full bg-purple-100 rounded-full h-3 overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full"
+                className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full relative"
                 initial={{ width: 0 }}
-                animate={{ width: `${progressToNext * 100}%` }}
+                animate={{ width: `${levelInfo.progressPercentage}%` }}
                 transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
-              />
+              >
+                {/* Glowing effect for progress bar */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-500 rounded-full opacity-50 blur-sm"></div>
+              </motion.div>
+            </div>
+            <div className="mt-2 text-center">
+              <p className="text-xs text-purple-600 font-medium">
+                {levelInfo.progressPercentage.toFixed(1)}% progress to next level
+              </p>
             </div>
           </motion.div>
 
@@ -521,7 +550,7 @@ const Dashboard: React.FC = () => {
               <div className="w-1 h-1 bg-purple-400 rounded-full" />
               <div className="flex items-center text-purple-700">
                 <Award size={16} className="mr-1" />
-                <span className="font-medium">Level {userLevel} Champion</span>
+                <span className="font-medium">Level {levelInfo.currentLevel} Champion</span>
               </div>
               <div className="w-1 h-1 bg-purple-400 rounded-full" />
               <div className="flex items-center text-purple-700">
