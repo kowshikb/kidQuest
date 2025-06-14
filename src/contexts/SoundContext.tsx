@@ -42,39 +42,82 @@ export const SoundProvider: React.FC<SoundProviderProps> = ({ children }) => {
     localStorage.setItem('kidquest-sound-enabled', JSON.stringify(isSoundEnabled));
   }, [isSoundEnabled]);
 
-  const [playClickSound] = useSoundLib(SOUND_URLS.click, { volume: 0.5, soundEnabled: isSoundEnabled });
-  const [playSuccessSound] = useSoundLib(SOUND_URLS.success, { volume: 0.5, soundEnabled: isSoundEnabled });
-  const [playErrorSound] = useSoundLib(SOUND_URLS.error, { volume: 0.5, soundEnabled: isSoundEnabled });
-  const [playCoinSound] = useSoundLib(SOUND_URLS.coin, { volume: 0.5, soundEnabled: isSoundEnabled });
-  const [playCompleteSound] = useSoundLib(SOUND_URLS.complete, { volume: 0.5, soundEnabled: isSoundEnabled });
-  const [playChallengeSound] = useSoundLib(SOUND_URLS.challenge, { volume: 0.5, soundEnabled: isSoundEnabled });
+  // Initialize sound hooks with proper volume and enabled state
+  const [playClickSound] = useSoundLib(SOUND_URLS.click, { 
+    volume: 0.5, 
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
+  const [playSuccessSound] = useSoundLib(SOUND_URLS.success, { 
+    volume: 0.5, 
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
+  const [playErrorSound] = useSoundLib(SOUND_URLS.error, { 
+    volume: 0.5, 
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
+  const [playCoinSound] = useSoundLib(SOUND_URLS.coin, { 
+    volume: 0.5, 
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
+  const [playCompleteSound] = useSoundLib(SOUND_URLS.complete, { 
+    volume: 0.5, 
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
+  const [playChallengeSound] = useSoundLib(SOUND_URLS.challenge, { 
+    volume: 0.5, 
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
 
   const toggleSound = () => {
-    setIsSoundEnabled(prev => !prev);
+    const newState = !isSoundEnabled;
+    setIsSoundEnabled(newState);
+    
+    // Play a test sound when enabling to give immediate feedback
+    if (newState) {
+      setTimeout(() => {
+        try {
+          playClickSound();
+        } catch (error) {
+          console.log('Sound test failed:', error);
+        }
+      }, 100);
+    }
   };
 
   const playSound = (sound: SoundType) => {
     if (!isSoundEnabled) return;
 
-    switch (sound) {
-      case 'click':
-        playClickSound();
-        break;
-      case 'success':
-        playSuccessSound();
-        break;
-      case 'error':
-        playErrorSound();
-        break;
-      case 'coin':
-        playCoinSound();
-        break;
-      case 'complete':
-        playCompleteSound();
-        break;
-      case 'challenge':
-        playChallengeSound();
-        break;
+    try {
+      switch (sound) {
+        case 'click':
+          playClickSound();
+          break;
+        case 'success':
+          playSuccessSound();
+          break;
+        case 'error':
+          playErrorSound();
+          break;
+        case 'coin':
+          playCoinSound();
+          break;
+        case 'complete':
+          playCompleteSound();
+          break;
+        case 'challenge':
+          playChallengeSound();
+          break;
+        default:
+          console.warn(`Unknown sound type: ${sound}`);
+      }
+    } catch (error) {
+      console.warn(`Failed to play sound ${sound}:`, error);
     }
   };
 
