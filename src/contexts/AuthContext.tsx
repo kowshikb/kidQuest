@@ -135,6 +135,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  // Helper function to update Explorer usernames to Champion
+  const updateExplorerToChampion = (profile: UserProfile): UserProfile => {
+    if (profile.username && profile.username.startsWith("Explorer")) {
+      // Replace "Explorer" with "Champion" in the username
+      const updatedUsername = profile.username.replace(/^Explorer/, "Champion");
+      return {
+        ...profile,
+        username: updatedUsername
+      };
+    }
+    return profile;
+  };
+
   // Optimized profile fetching with immediate fallback
   const fetchUserProfileOptimized = async (userId: string) => {
     try {
@@ -153,7 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (userSnap.exists()) {
           const profileData = userSnap.data() as UserProfile;
           // Ensure all required fields exist with defaults
-          const completeProfile = {
+          let completeProfile = {
             ...defaultUserProfile,
             ...profileData,
             userId: userId, // Add userId to profile
@@ -162,6 +175,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               ...profileData.location,
             },
           };
+
+          // ✅ AUTOMATIC FIX: Update Explorer usernames to Champion
+          const originalUsername = completeProfile.username;
+          completeProfile = updateExplorerToChampion(completeProfile);
+          
+          // If username was updated, save it to the database
+          if (originalUsername !== completeProfile.username) {
+            console.log(`Updating username from "${originalUsername}" to "${completeProfile.username}"`);
+            try {
+              await updateDoc(userRef, {
+                username: completeProfile.username
+              });
+            } catch (updateError) {
+              console.warn("Could not update username in database:", updateError);
+              // Continue with the updated profile even if database update fails
+            }
+          }
+
           setUserProfile(completeProfile);
         } else {
           // Create new profile for new users in background
@@ -186,7 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ...defaultUserProfile,
       userId: userId,
       friendlyUserId: generateFriendlyUserId(),
-      username: `Champion${Math.floor(Math.random() * 10000)}`, // ✅ FIXED: Changed from Explorer to Champion
+      username: `Champion${Math.floor(Math.random() * 10000)}`,
       avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
       createdAt: serverTimestamp(),
       lastActive: serverTimestamp(),
@@ -202,7 +233,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...defaultUserProfile,
         userId: userId,
         friendlyUserId: friendlyUserId,
-        username: `Champion${Math.floor(Math.random() * 10000)}`, // ✅ FIXED: Changed from Explorer to Champion
+        username: `Champion${Math.floor(Math.random() * 10000)}`,
         avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
         createdAt: serverTimestamp(),
         lastActive: serverTimestamp(),
@@ -224,7 +255,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (userSnap.exists()) {
         const profileData = userSnap.data() as UserProfile;
-        const completeProfile = {
+        let completeProfile = {
           ...defaultUserProfile,
           ...profileData,
           userId: userId,
@@ -233,6 +264,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             ...profileData.location,
           },
         };
+
+        // ✅ AUTOMATIC FIX: Update Explorer usernames to Champion
+        const originalUsername = completeProfile.username;
+        completeProfile = updateExplorerToChampion(completeProfile);
+        
+        // If username was updated, save it to the database
+        if (originalUsername !== completeProfile.username) {
+          console.log(`Background update: "${originalUsername}" to "${completeProfile.username}"`);
+          try {
+            await updateDoc(userRef, {
+              username: completeProfile.username
+            });
+          } catch (updateError) {
+            console.warn("Could not update username in background:", updateError);
+          }
+        }
+
         setUserProfile(completeProfile);
       } else if (retryCount < 2) {
         // Retry after a delay
