@@ -70,7 +70,7 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2 rounded-lg shadow-xl border border-purple-300 text-xs whitespace-nowrap">
               <div className="font-medium text-yellow-300 flex items-center">
                 <Coin size={14} className="mr-1" />
-                Magic Coins: {coins}
+                Magic Coins
               </div>
               <div className="text-purple-100 text-xs mt-0.5">
                 Complete quests to earn more!
