@@ -54,7 +54,10 @@ service cloud.firestore {
       allow read: if isInvolvedInFriendRequest();
       allow create: if isAuthenticated() && 
         request.resource.data.fromUserId == request.auth.uid &&
-        request.resource.data.status == 'pending';
+        request.resource.data.status == 'pending' &&
+        // Allow optional type and roomId fields for room invitations
+        (!request.resource.data.keys().hasAny(['type']) || request.resource.data.type is string) &&
+        (!request.resource.data.keys().hasAny(['roomId']) || request.resource.data.roomId is string);
       allow update: if isAuthenticated() && 
         resource.data.toUserId == request.auth.uid &&
         request.resource.data.fromUserId == resource.data.fromUserId &&
@@ -86,4 +89,4 @@ service cloud.firestore {
       allow read, write: if false;
     }
   }
-} 
+}

@@ -64,6 +64,8 @@
 │   │   ├── toUserId: string        # Recipient user ID
 │   │   ├── toFriendlyId: string    # Recipient friendly ID
 │   │   ├── status: string          # pending/accepted/rejected
+│   │   ├── type: string            # Optional: 'friend' or 'room_invitation'
+│   │   ├── roomId: string          # Optional: Room ID for room invitations
 │   │   ├── createdAt: timestamp    # Request creation time
 │   │   └── respondedAt: timestamp  # Response time (if any)
 │   │
@@ -127,11 +129,17 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Friend requests
+    // Friend requests - supports both friend requests and room invitations
     match /artifacts/{appId}/public/data/friendRequests/{requestId} {
       allow read, write: if request.auth != null &&
         (resource.data.fromUserId == request.auth.uid ||
          resource.data.toUserId == request.auth.uid);
+      // Allow creation with optional type and roomId fields for room invitations
+      allow create: if request.auth != null && 
+        request.resource.data.fromUserId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        (!request.resource.data.keys().hasAny(['type']) || request.resource.data.type is string) &&
+        (!request.resource.data.keys().hasAny(['roomId']) || request.resource.data.roomId is string);
     }
 
     // Leaderboards are read-only for users
@@ -180,6 +188,15 @@ service cloud.firestore {
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "friendRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUserId", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
     }
   ]
 }
@@ -192,7 +209,7 @@ This schema supports:
 1. **User Management** - Complete user profiles with friendly IDs
 2. **Quest System** - Themes and tasks with rewards
 3. **Real-time Challenges** - Room-based multiplayer games
-4. **Social Features** - Friends system with requests
+4. **Social Features** - Friends system with requests and room invitations
 5. **Leaderboards** - Multiple leaderboard types with caching
 6. **Analytics** - Game statistics and user activity tracking
 7. **Administration** - Feature flags and system configuration
@@ -202,8 +219,21 @@ This schema supports:
 1. **User Registration**: Creates user document with auto-generated friendly ID
 2. **Quest Completion**: Updates user's completedTasks and coins
 3. **Friend System**: Creates friend requests and updates friend lists
-4. **Leaderboards**: Aggregated from user data (can be real-time or scheduled)
-5. **Rooms**: Real-time updates for multiplayer challenges
+4. **Room Invitations**: Creates friend requests with type='room_invitation' and roomId
+5. **Leaderboards**: Aggregated from user data (can be real-time or scheduled)
+6. **Rooms**: Real-time updates for multiplayer challenges
+
+## Friend Request Types
+
+The `friendRequests` collection now supports two types of requests:
+
+1. **Friend Requests** (default): Basic friend connection requests
+   - Required fields: `fromUserId`, `fromUsername`, `fromFriendlyId`, `toUserId`, `toFriendlyId`, `status`
+   - Optional fields: `type` (defaults to 'friend')
+
+2. **Room Invitations**: Invitations to join specific challenge rooms
+   - Required fields: Same as friend requests plus `type: 'room_invitation'` and `roomId`
+   - Used when inviting friends to join challenge rooms
 
 ✅ Added theme: Math Magic Academy
 ✅ Added theme: Science Quest Laboratory  
