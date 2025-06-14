@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Edit,
@@ -8,6 +8,17 @@ import {
   Coins as Coin,
   Award,
   Users,
+  Crown,
+  Star,
+  Zap,
+  Trophy,
+  Target,
+  MapPin,
+  Calendar,
+  Sparkles,
+  Shield,
+  Gem,
+  Rocket,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSound } from "../contexts/SoundContext";
@@ -59,7 +70,7 @@ const ProfilePage: React.FC = () => {
     if (!username.trim()) {
       showModal({
         title: "Missing Information",
-        message: "Please enter a username for your profile!",
+        message: "Please enter a username for your champion profile!",
         type: "warning",
       });
       return;
@@ -82,7 +93,7 @@ const ProfilePage: React.FC = () => {
 
       showModal({
         title: "Profile Updated!",
-        message: "Your magical profile has been updated successfully!",
+        message: "Your legendary champion profile has been updated successfully!",
         type: "success",
       });
     } catch (error) {
@@ -94,7 +105,7 @@ const ProfilePage: React.FC = () => {
   const handleSignOut = () => {
     showModal({
       title: "Sign Out",
-      message: "Are you sure you want to leave your magical journey for now?",
+      message: "Are you sure you want to leave your legendary journey for now?",
       type: "warning",
       confirmText: "Sign Out",
       cancelText: "Stay",
@@ -121,186 +132,150 @@ const ProfilePage: React.FC = () => {
     return Math.round((points / total) * 100);
   };
 
+  // Calculate user level and rank
+  const getUserLevel = () => Math.floor((userProfile?.coins || 0) / 100) + 1;
+  const getProgressToNextLevel = () => ((userProfile?.coins || 0) % 100) / 100;
+  const getRankTitle = () => {
+    const level = getUserLevel();
+    if (level >= 50) return "Legendary Master";
+    if (level >= 30) return "Elite Champion";
+    if (level >= 20) return "Grand Champion";
+    if (level >= 10) return "Champion";
+    if (level >= 5) return "Rising Star";
+    return "Novice Champion";
+  };
+
   if (!currentUser || !userProfile) {
     return (
-      <div className="text-center py-12">
-        <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-purple-800">Loading your magical profile...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-25 to-pink-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl text-purple-800">Loading your legendary profile...</p>
+        </div>
       </div>
     );
   }
 
+  const completionPercentage = getProfileCompletionPercentage();
+  const userLevel = getUserLevel();
+  const progressToNext = getProgressToNextLevel();
+  const rankTitle = getRankTitle();
+
   return (
-    <div className="py-6">
-      <div className="mb-8 text-center">
-        <motion.h1
-          className="text-3xl md:text-4xl font-bold text-purple-900 mb-2"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-        >
-          My Magical Profile
-        </motion.h1>
-        <motion.p
-          className="text-purple-600"
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          Customize your adventure identity!
-        </motion.p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-25 to-pink-50 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full opacity-10"
+            style={{
+              width: `${Math.random() * 100 + 50}px`,
+              height: `${Math.random() * 100 + 50}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              background: `linear-gradient(135deg, ${
+                ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B'][Math.floor(Math.random() * 4)]
+              }, ${
+                ['#A78BFA', '#67E8F9', '#34D399', '#FBBF24'][Math.floor(Math.random() * 4)]
+              })`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              x: [0, 20, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 2,
+            }}
+          />
+        ))}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* Profile Card */}
+      <div className="relative z-10 py-8 px-4">
+        {/* Header */}
         <motion.div
-          className="md:col-span-2"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white">Explorer Profile</h2>
-              <button
-                onClick={toggleEditMode}
-                className="p-2 bg-white bg-opacity-20 rounded-full text-white hover:bg-opacity-30 transition-colors"
+          <motion.div
+            className="inline-block mb-6"
+            whileHover={{ rotate: 10, scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/30">
+                <Crown size={40} className="text-yellow-300" />
+              </div>
+              <motion.div
+                className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               >
-                {isEditing ? <CheckCircle size={20} /> : <Edit size={20} />}
-              </button>
+                <Sparkles size={16} className="text-purple-700" />
+              </motion.div>
             </div>
+          </motion.div>
 
-            <div className="p-6">
-              {isEditing ? (
-                /* Edit Form */
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="username\"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="storybook-input w-full"
-                      placeholder="Enter your explorer name"
-                    />
-                  </div>
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+            Champion Profile
+          </h1>
+          <p className="text-xl text-purple-600 font-medium">
+            Customize your legendary identity!
+          </p>
+        </motion.div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Avatar
-                    </label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {AVATAR_OPTIONS.map((avatar, index) => (
-                        <div
-                          key={index}
-                          className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                            avatarUrl === avatar
-                              ? "border-purple-500 shadow-md"
-                              : "border-gray-200 hover:border-purple-300"
-                          }`}
-                          onClick={() => {
-                            setAvatarUrl(avatar);
-                            playSound("click");
-                          }}
-                        >
-                          <img
-                            src={avatar}
-                            alt={`Avatar option ${index + 1}`}
-                            className="w-full h-24 object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Location
-                    </label>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <input
-                          type="text"
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="storybook-input w-full"
-                          placeholder="City"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          className="storybook-input w-full"
-                          placeholder="State/Province"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={country}
-                          onChange={(e) => setCountry(e.target.value)}
-                          className="storybook-input w-full"
-                          placeholder="Country"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                    <button onClick={saveProfile} className="btn-magic w-full">
-                      <span className="flex items-center justify-center">
-                        <CheckCircle size={18} className="mr-2" />
-                        Save Profile
-                      </span>
-                    </button>
-                  </div>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-8">
+          {/* Main Profile Card */}
+          <motion.div
+            className="lg:col-span-2"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+          >
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden border border-purple-100">
+              {/* Profile Header */}
+              <div className="relative bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 p-8">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-4 right-4 text-6xl">👑</div>
+                  <div className="absolute bottom-4 left-4 text-4xl">⚡</div>
                 </div>
-              ) : (
-                /* Display Profile */
-                <div>
-                  <div className="flex flex-col md:flex-row items-center md:items-start">
-                    <div className="w-24 h-24 rounded-full overflow-hidden mb-4 md:mb-0 md:mr-6 border-4 border-purple-200">
-                      <img
-                        src={userProfile.avatarUrl || AVATAR_OPTIONS[0]}
-                        alt={userProfile.username}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
 
-                    <div className="flex-1 text-center md:text-left">
-                      <h3 className="text-2xl font-bold text-purple-900 mb-1">
-                        {userProfile.username}
-                      </h3>
+                <div className="relative z-10 flex justify-between items-start">
+                  <div className="flex items-center">
+                    <motion.div
+                      className="relative"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-xl">
+                        <img
+                          src={userProfile.avatarUrl || AVATAR_OPTIONS[0]}
+                          alt={userProfile.username}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-white">
+                        <Star size={16} className="text-purple-700" />
+                      </div>
+                    </motion.div>
 
-                      <div className="mb-4">
-                        {userProfile.location?.city && (
-                          <p className="text-gray-600 flex items-center justify-center md:justify-start">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
+                    <div className="ml-6 text-white">
+                      <h2 className="text-3xl font-bold mb-1">{userProfile.username}</h2>
+                      <div className="flex items-center mb-2">
+                        <Shield size={18} className="mr-2 text-yellow-300" />
+                        <span className="text-yellow-300 font-medium">{rankTitle}</span>
+                      </div>
+                      {userProfile.location?.city && (
+                        <div className="flex items-center text-white/80">
+                          <MapPin size={16} className="mr-1" />
+                          <span>
                             {[
                               userProfile.location.city,
                               userProfile.location.state,
@@ -308,198 +283,350 @@ const ProfilePage: React.FC = () => {
                             ]
                               .filter(Boolean)
                               .join(", ")}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-purple-50 p-3 rounded-xl text-center">
-                          <div className="text-sm text-purple-600 mb-1">
-                            Coins
-                          </div>
-                          <div className="font-bold text-purple-900 text-xl">
-                            {userProfile.coins}
-                          </div>
+                          </span>
                         </div>
-                        <div className="bg-purple-50 p-3 rounded-xl text-center">
-                          <div className="text-sm text-purple-600 mb-1">
-                            Quests
-                          </div>
-                          <div className="font-bold text-purple-900 text-xl">
-                            {userProfile.completedTasks?.length || 0}
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-6">
-                    <div className="mb-2 flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">
-                        Profile Completion
-                      </span>
-                      <span className="text-sm font-medium text-purple-600">
-                        {getProfileCompletionPercentage()}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-purple-600 h-2.5 rounded-full"
-                        style={{
-                          width: `${getProfileCompletionPercentage()}%`,
-                        }}
-                      ></div>
-                    </div>
-                  </div>
+                  <motion.button
+                    onClick={toggleEditMode}
+                    className="p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isEditing ? <CheckCircle size={24} /> : <Edit size={24} />}
+                  </motion.button>
+                </div>
 
-                  <div className="mt-6">
-                    <p className="text-gray-600 mb-2">
-                      User ID (Share with friends to connect):
-                    </p>
-                    <div className="bg-gray-100 p-3 rounded-lg font-mono text-sm break-all">
-                      {userProfile.friendlyUserId || currentUser.uid}
-                    </div>
+                {/* Level Progress */}
+                <div className="mt-6 relative z-10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-white/90 font-medium">Level {userLevel}</span>
+                    <span className="text-white/90 text-sm">
+                      {(userProfile.coins || 0) % 100}/100 XP
+                    </span>
                   </div>
-
-                  <div className="mt-6">
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-300 flex items-center justify-center"
-                    >
-                      <LogOut size={18} className="mr-2" />
-                      Sign Out
-                    </button>
+                  <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressToNext * 100}%` }}
+                      transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
+                    />
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Profile Content */}
+              <div className="p-8">
+                {isEditing ? (
+                  /* Edit Form */
+                  <motion.div
+                    className="space-y-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Champion Name
+                      </label>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-300"
+                        placeholder="Enter your champion name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Avatar Selection
+                      </label>
+                      <div className="grid grid-cols-3 gap-4">
+                        {AVATAR_OPTIONS.map((avatar, index) => (
+                          <motion.div
+                            key={index}
+                            className={`cursor-pointer rounded-2xl overflow-hidden border-3 transition-all ${
+                              avatarUrl === avatar
+                                ? "border-purple-500 shadow-lg shadow-purple-500/25 scale-105"
+                                : "border-gray-200 hover:border-purple-300 hover:scale-102"
+                            }`}
+                            onClick={() => {
+                              setAvatarUrl(avatar);
+                              playSound("click");
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <img
+                              src={avatar}
+                              alt={`Avatar option ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input
+                          type="text"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-300"
+                          placeholder="City"
+                        />
+                        <input
+                          type="text"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-300"
+                          placeholder="State/Province"
+                        />
+                        <input
+                          type="text"
+                          value={country}
+                          onChange={(e) => setCountry(e.target.value)}
+                          className="px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-300"
+                          placeholder="Country"
+                        />
+                      </div>
+                    </div>
+
+                    <motion.button
+                      onClick={saveProfile}
+                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="flex items-center justify-center">
+                        <CheckCircle size={20} className="mr-2" />
+                        Save Champion Profile
+                      </span>
+                    </motion.button>
+                  </motion.div>
+                ) : (
+                  /* Display Profile */
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl text-center">
+                        <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Coin size={20} className="text-white" />
+                        </div>
+                        <div className="text-sm text-purple-600 mb-1">Coins</div>
+                        <div className="font-bold text-purple-900 text-xl">
+                          {userProfile.coins}
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-2xl text-center">
+                        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Target size={20} className="text-white" />
+                        </div>
+                        <div className="text-sm text-green-600 mb-1">Quests</div>
+                        <div className="font-bold text-green-900 text-xl">
+                          {userProfile.completedTasks?.length || 0}
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl text-center">
+                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Users size={20} className="text-white" />
+                        </div>
+                        <div className="text-sm text-blue-600 mb-1">Friends</div>
+                        <div className="font-bold text-blue-900 text-xl">
+                          {userProfile.friendsList?.length || 0}
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-2xl text-center">
+                        <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Star size={20} className="text-white" />
+                        </div>
+                        <div className="text-sm text-yellow-600 mb-1">Level</div>
+                        <div className="font-bold text-yellow-900 text-xl">{userLevel}</div>
+                      </div>
+                    </div>
+
+                    {/* Profile Completion */}
+                    <div className="mb-8">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-lg font-medium text-gray-700">
+                          Profile Completion
+                        </span>
+                        <span className="text-lg font-bold text-purple-600">
+                          {completionPercentage}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${completionPercentage}%` }}
+                          transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* User ID Section */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-bold text-gray-800 mb-3">
+                        Champion ID
+                      </h3>
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-2xl border border-purple-200">
+                        <p className="text-gray-600 mb-2 text-sm">
+                          Share this ID with friends to connect:
+                        </p>
+                        <div className="bg-white p-3 rounded-xl font-mono text-sm break-all border border-purple-200">
+                          {userProfile.friendlyUserId || currentUser.uid}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sign Out Button */}
+                    <motion.button
+                      onClick={handleSignOut}
+                      className="w-full px-6 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="flex items-center justify-center">
+                        <LogOut size={20} className="mr-2" />
+                        Sign Out
+                      </span>
+                    </motion.button>
+                  </motion.div>
+                )}
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Stats & Info */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="space-y-6">
-            {/* Quick Stats */}
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100">
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-purple-900 mb-4">
-                  Adventure Stats
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-center p-3 bg-purple-50 rounded-xl">
-                    <div className="p-2 bg-purple-100 rounded-full mr-4">
-                      <Coin size={20} className="text-purple-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm text-purple-600">Total Coins</div>
-                      <div className="font-bold text-purple-900">
-                        {userProfile.coins}
-                      </div>
-                    </div>
+          {/* Sidebar */}
+          <motion.div
+            className="space-y-8"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
+            {/* Achievement Card */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-purple-100">
+              <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-6">
+                <div className="flex items-center text-white">
+                  <Trophy size={24} className="mr-3" />
+                  <h3 className="text-xl font-bold">Achievements</h3>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center p-3 bg-yellow-50 rounded-xl">
+                  <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mr-4">
+                    <Rocket size={20} className="text-white" />
                   </div>
+                  <div>
+                    <div className="font-medium text-gray-800">First Steps</div>
+                    <div className="text-sm text-gray-600">Profile created!</div>
+                  </div>
+                </div>
 
+                {(userProfile.completedTasks?.length || 0) > 0 && (
                   <div className="flex items-center p-3 bg-green-50 rounded-xl">
-                    <div className="p-2 bg-green-100 rounded-full mr-4">
-                      <CheckCircle size={20} className="text-green-600" />
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                      <Target size={20} className="text-white" />
                     </div>
                     <div>
-                      <div className="text-sm text-green-600">
-                        Quests Completed
-                      </div>
-                      <div className="font-bold text-green-900">
-                        {userProfile.completedTasks?.length || 0}
+                      <div className="font-medium text-gray-800">Quest Master</div>
+                      <div className="text-sm text-gray-600">
+                        Completed {userProfile.completedTasks?.length} quests
                       </div>
                     </div>
                   </div>
+                )}
 
-                  <div className="flex items-center p-3 bg-yellow-50 rounded-xl">
-                    <div className="p-2 bg-yellow-100 rounded-full mr-4">
-                      <Award size={20} className="text-yellow-600" />
+                {(userProfile.coins || 0) >= 100 && (
+                  <div className="flex items-center p-3 bg-purple-50 rounded-xl">
+                    <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-4">
+                      <Gem size={20} className="text-white" />
                     </div>
                     <div>
-                      <div className="text-sm text-yellow-600">
-                        Leaderboard Rank
-                      </div>
-                      <div className="font-bold text-yellow-900">
-                        {/* This would be dynamically calculated in a real app */}
-                        Coming Soon
-                      </div>
+                      <div className="font-medium text-gray-800">Coin Collector</div>
+                      <div className="text-sm text-gray-600">Earned 100+ coins</div>
                     </div>
                   </div>
+                )}
+              </div>
+            </div>
 
-                  <div className="flex items-center p-3 bg-blue-50 rounded-xl">
-                    <div className="p-2 bg-blue-100 rounded-full mr-4">
-                      <Users size={20} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm text-blue-600">Friends</div>
-                      <div className="font-bold text-blue-900">
-                        {userProfile.friendsList?.length || 0}
-                      </div>
-                    </div>
-                  </div>
+            {/* Quick Stats */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden border border-purple-100">
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6">
+                <div className="flex items-center text-white">
+                  <Zap size={24} className="mr-3" />
+                  <h3 className="text-xl font-bold">Champion Stats</h3>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Rank</span>
+                  <span className="font-bold text-purple-900">{rankTitle}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Level</span>
+                  <span className="font-bold text-purple-900">{userLevel}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Total XP</span>
+                  <span className="font-bold text-purple-900">
+                    {userProfile.coins || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Next Level</span>
+                  <span className="font-bold text-purple-900">
+                    {100 - ((userProfile.coins || 0) % 100)} XP
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Coming Soon */}
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl shadow-md overflow-hidden text-white p-6">
-              <h3 className="text-lg font-bold mb-2">Coming Soon!</h3>
-              <p className="mb-4 opacity-90">
-                Exciting new features are on the way:
-              </p>
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl shadow-xl overflow-hidden text-white p-6">
+              <div className="flex items-center mb-4">
+                <Sparkles size={24} className="mr-3" />
+                <h3 className="text-xl font-bold">Coming Soon!</h3>
+              </div>
+              <p className="mb-4 opacity-90">Exciting new features:</p>
               <ul className="space-y-2 opacity-90">
                 <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 10-1.414-1.414L11 10.586V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Magic Shop for Rewards
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></div>
+                  Champion Badges
                 </li>
                 <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 10-1.414-1.414L11 10.586V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Custom Badge Collection
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></div>
+                  Magic Shop
                 </li>
                 <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 10-1.414-1.414L11 10.586V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Team Challenges
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></div>
+                  Guild System
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></div>
+                  Epic Tournaments
                 </li>
               </ul>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

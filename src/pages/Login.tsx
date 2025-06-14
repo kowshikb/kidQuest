@@ -49,12 +49,10 @@ const Login: React.FC = () => {
       await signInWithGoogle();
     } catch (err: any) {
       console.error("Google login error:", err);
-      // Error message is already handled in AuthContext, but set a fallback
       if (
         err.code === "auth/popup-closed-by-user" ||
         err.code === "auth/cancelled-popup-request"
       ) {
-        // Don't set error for user-cancelled actions
         return;
       }
       setError("Unable to sign in with Google. Please try again.");
@@ -70,7 +68,6 @@ const Login: React.FC = () => {
       return;
     }
 
-    // Basic email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address.");
@@ -79,13 +76,11 @@ const Login: React.FC = () => {
 
     try {
       await resetPassword(email);
-      // Success message is handled in AuthContext
       setIsForgotPassword(false);
       setEmail("");
     } catch (err: any) {
       console.error("Password reset error:", err);
 
-      // Handle specific error cases based on Firebase error codes
       if (err.code === "auth/user-not-found") {
         setError(
           "No account found with this email address. Please check your email or create a new account."
@@ -97,7 +92,6 @@ const Login: React.FC = () => {
           "Too many requests. Please wait a moment before trying again."
         );
       } else {
-        // Generic fallback error message
         setError("Unable to send password reset email. Please try again.");
       }
     }
@@ -120,7 +114,6 @@ const Login: React.FC = () => {
         await signUpWithEmail(email, password);
       } catch (err: any) {
         console.error("Email signup error:", err);
-        // Error message is already handled in AuthContext, set a fallback
         setError("Unable to create account. Please try again.");
       }
     } else {
@@ -128,7 +121,6 @@ const Login: React.FC = () => {
         await signInWithEmail(email, password);
       } catch (err: any) {
         console.error("Email login error:", err);
-        // Error message is already handled in AuthContext, set a fallback
         setError(
           "Unable to sign in. Please check your credentials and try again."
         );
@@ -198,7 +190,7 @@ const Login: React.FC = () => {
             KidQuest Champions
           </h1>
           <p className="text-lg text-purple-600">
-            Begin Your Magical Adventure
+            Begin Your Legendary Adventure
           </p>
         </div>
 
@@ -210,7 +202,7 @@ const Login: React.FC = () => {
             {isForgotPassword
               ? "Reset Your Password"
               : isSignUp
-              ? "Create Your Account"
+              ? "Create Your Champion Account"
               : "Choose Your Portal"}
           </h2>
 

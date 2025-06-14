@@ -124,7 +124,7 @@ const LeaderboardPage: React.FC = () => {
   const getFilterName = () => {
     switch (activeFilter) {
       case "global":
-        return "Global Heroes";
+        return "Global Champions";
       case "country":
         return "My Kingdom";
       case "state":
@@ -161,7 +161,7 @@ const LeaderboardPage: React.FC = () => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          Champions Gallery
+          Champions Hall of Fame
         </motion.h1>
         <motion.p
           className="text-purple-600"
@@ -169,7 +169,7 @@ const LeaderboardPage: React.FC = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          See the top explorers in the KidQuest world!
+          See the top legendary champions in the KidQuest world!
         </motion.p>
       </div>
 
@@ -190,7 +190,7 @@ const LeaderboardPage: React.FC = () => {
             }`}
           >
             <Trophy size={18} className="mr-2" />
-            Global Heroes
+            Global Champions
           </button>
           <button
             onClick={() => changeFilter("country")}
@@ -287,7 +287,7 @@ const LeaderboardPage: React.FC = () => {
             </h3>
             <p className="text-purple-600">
               {activeFilter === "friends"
-                ? "Add some friends to see them on the leaderboard!"
+                ? "Add some champion friends to see them on the leaderboard!"
                 : "Try a different filter to see more champions!"}
             </p>
           </div>
@@ -303,7 +303,7 @@ const LeaderboardPage: React.FC = () => {
                     Champion
                   </th>
                   <th className="py-3 px-4 text-left text-sm font-medium text-purple-900">
-                    User ID
+                    Champion ID
                   </th>
                   <th className="py-3 px-4 text-left text-sm font-medium text-purple-900">
                     Location

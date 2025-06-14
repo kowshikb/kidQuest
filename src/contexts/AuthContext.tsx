@@ -81,7 +81,7 @@ interface AuthContextType {
 const defaultUserProfile: UserProfile = {
   userId: "",
   friendlyUserId: "",
-  username: "New Explorer",
+  username: "New Champion",
   avatarUrl: AVATAR_OPTIONS[0],
   coins: 0,
   location: {
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ...defaultUserProfile,
       userId: userId,
       friendlyUserId: generateFriendlyUserId(),
-      username: `Explorer${Math.floor(Math.random() * 10000)}`,
+      username: `Champion${Math.floor(Math.random() * 10000)}`,
       avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
       createdAt: serverTimestamp(),
       lastActive: serverTimestamp(),
@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...defaultUserProfile,
         userId: userId,
         friendlyUserId: friendlyUserId,
-        username: `Explorer${Math.floor(Math.random() * 10000)}`,
+        username: `Champion${Math.floor(Math.random() * 10000)}`,
         avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
         createdAt: serverTimestamp(),
         lastActive: serverTimestamp(),
@@ -273,7 +273,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let userMessage = "Unable to continue anonymously. Please try again.";
 
-      // Handle specific anonymous auth errors
       switch (error.code) {
         case "auth/operation-not-allowed":
           userMessage =

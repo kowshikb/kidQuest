@@ -96,7 +96,7 @@ const FriendsPage: React.FC = () => {
                 requests.push({
                   id: docSnap.id,
                   ...requestData,
-                  fromUsername: 'Unknown User'
+                  fromUsername: 'Unknown Champion'
                 });
               }
             } catch (error) {
@@ -104,7 +104,7 @@ const FriendsPage: React.FC = () => {
               requests.push({
                 id: docSnap.id,
                 ...requestData,
-                fromUsername: 'Unknown User'
+                fromUsername: 'Unknown Champion'
               });
             }
           }
@@ -225,7 +225,7 @@ const FriendsPage: React.FC = () => {
     if (userProfile?.friendsList?.includes(friendId.trim())) {
       showModal({
         title: "Already Friends",
-        message: "You're already friends with this user!",
+        message: "You're already friends with this champion!",
         type: "info"
       });
       return;
@@ -240,8 +240,8 @@ const FriendsPage: React.FC = () => {
       
       if (!userSnap.exists()) {
         showModal({
-          title: "User Not Found",
-          message: "We couldn't find a user with that ID. Check the ID and try again!",
+          title: "Champion Not Found",
+          message: "We couldn't find a champion with that ID. Check the ID and try again!",
           type: "error"
         });
         return;
@@ -261,7 +261,7 @@ const FriendsPage: React.FC = () => {
       if (!existingRequests.empty) {
         showModal({
           title: "Request Already Sent",
-          message: "You've already sent a friend request to this user!",
+          message: "You've already sent a friend request to this champion!",
           type: "info"
         });
         return;
@@ -377,7 +377,7 @@ const FriendsPage: React.FC = () => {
       
       showModal({
         title: "Remove Friend",
-        message: "Are you sure you want to remove this friend?",
+        message: "Are you sure you want to remove this champion from your alliance?",
         type: "warning",
         confirmText: "Remove",
         cancelText: "Cancel",
@@ -409,7 +409,7 @@ const FriendsPage: React.FC = () => {
       console.error("Error removing friend:", error);
       showModal({
         title: "Remove Failed",
-        message: "We couldn't remove this friend. Try again later!",
+        message: "We couldn't remove this champion. Try again later!",
         type: "error"
       });
     }
@@ -431,7 +431,7 @@ const FriendsPage: React.FC = () => {
         createdAt: Date.now(),
         messages: [{
           senderId: 'system',
-          text: `${userProfile?.username || 'A player'} created this room and invited their friend.`,
+          text: `${userProfile?.username || 'A champion'} created this room and invited their friend.`,
           timestamp: Date.now()
         }],
         currentChallenge: null
@@ -454,7 +454,7 @@ const FriendsPage: React.FC = () => {
       
       showModal({
         title: "Invitation Sent!",
-        message: "You've invited your friend to join your challenge room!",
+        message: "You've invited your champion friend to join your challenge room!",
         type: "success",
         confirmText: "Go to Room",
         cancelText: "Stay Here",
@@ -464,7 +464,7 @@ const FriendsPage: React.FC = () => {
       console.error("Error inviting friend:", error);
       showModal({
         title: "Invitation Failed",
-        message: "We couldn't invite your friend. Try again later!",
+        message: "We couldn't invite your champion friend. Try again later!",
         type: "error"
       });
     }
@@ -483,7 +483,7 @@ const FriendsPage: React.FC = () => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          Friend Alliance
+          Champion Alliance
         </motion.h1>
         <motion.p 
           className="text-purple-600"
@@ -491,7 +491,7 @@ const FriendsPage: React.FC = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          Connect with other explorers on your journey!
+          Connect with other legendary champions on your journey!
         </motion.p>
       </div>
 
@@ -502,14 +502,14 @@ const FriendsPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h2 className="text-xl font-bold text-purple-900 mb-4">Add a New Friend</h2>
-        <p className="text-gray-600 mb-4">Enter your friend's User ID to send them a friend request.</p>
+        <h2 className="text-xl font-bold text-purple-900 mb-4">Add a New Champion</h2>
+        <p className="text-gray-600 mb-4">Enter your friend's Champion ID to send them a friend request.</p>
         <div className="flex">
           <input
             type="text"
             value={friendId}
             onChange={(e) => setFriendId(e.target.value)}
-            placeholder="Enter Friend's User ID"
+            placeholder="Enter Champion's User ID"
             className="storybook-input flex-1 rounded-r-none"
           />
           <button
@@ -523,7 +523,7 @@ const FriendsPage: React.FC = () => {
         </div>
         {currentUser && (
           <div className="mt-4 p-4 bg-purple-50 rounded-xl">
-            <p className="text-purple-800 text-sm">Your User ID: <span className="font-mono font-medium">{currentUser.uid}</span></p>
+            <p className="text-purple-800 text-sm">Your Champion ID: <span className="font-mono font-medium">{currentUser.uid}</span></p>
             <p className="text-purple-600 text-xs mt-1">Share this with friends so they can add you!</p>
           </div>
         )}
@@ -537,7 +537,7 @@ const FriendsPage: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="text-2xl font-bold text-purple-900 mb-4">Friend Requests</h2>
+          <h2 className="text-2xl font-bold text-purple-900 mb-4">Champion Requests</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {friendRequests.map((request) => (
               <motion.div
@@ -557,13 +557,13 @@ const FriendsPage: React.FC = () => {
                       />
                     ) : (
                       <div className="w-full h-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold">
-                        {(request.fromUsername || 'U').charAt(0)}
+                        {(request.fromUsername || 'C').charAt(0)}
                       </div>
                     )}
                   </div>
                   <div>
                     <h3 className="font-bold text-purple-900">{request.fromUsername}</h3>
-                    <p className="text-sm text-gray-500">User ID: {request.fromUserId}</p>
+                    <p className="text-sm text-gray-500">Champion ID: {request.fromUserId}</p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -595,7 +595,7 @@ const FriendsPage: React.FC = () => {
         transition={{ delay: 0.4 }}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-purple-900">My Friends</h2>
+          <h2 className="text-2xl font-bold text-purple-900">My Champion Alliance</h2>
           
           {/* Search */}
           {friends.length > 0 && (
@@ -606,7 +606,7 @@ const FriendsPage: React.FC = () => {
               <input
                 type="text"
                 className="storybook-input w-full pl-10 py-2 text-sm"
-                placeholder="Search friends..."
+                placeholder="Search champions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -617,22 +617,22 @@ const FriendsPage: React.FC = () => {
         {loading ? (
           <div className="text-center py-10">
             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-purple-600">Loading your magical friends...</p>
+            <p className="text-purple-600">Loading your legendary champions...</p>
           </div>
         ) : friends.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-md p-8 text-center border-2 border-purple-100">
             <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
               <Users size={32} className="text-purple-600" />
             </div>
-            <h3 className="text-xl font-bold text-purple-900 mb-2">No Friends Yet</h3>
-            <p className="text-purple-600 mb-6">Add friends to start building your alliance!</p>
+            <h3 className="text-xl font-bold text-purple-900 mb-2">No Champions Yet</h3>
+            <p className="text-purple-600 mb-6">Add champions to start building your alliance!</p>
           </div>
         ) : filteredFriends.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-md p-8 text-center border-2 border-purple-100">
             <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
               <Search size={32} className="text-purple-600" />
             </div>
-            <h3 className="text-xl font-bold text-purple-900 mb-2">No Matching Friends</h3>
+            <h3 className="text-xl font-bold text-purple-900 mb-2">No Matching Champions</h3>
             <p className="text-purple-600">Try a different search term</p>
           </div>
         ) : (
