@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db, getBasePath } from '../firebase/config';
 import { useModal } from './ModalContext';
+import { useAuth } from './AuthContext';
 
 export interface Task {
   id: string;
@@ -60,10 +61,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     searchTerm: null as string | null,
   });
   const { showModal } = useModal();
+  const { currentUser } = useAuth();
 
-  // Fetch themes from Firestore
+  // Fetch themes from Firestore only when user is authenticated
   useEffect(() => {
     const fetchThemes = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const themesRef = collection(db, `${getBasePath()}/themes`);
         const themesQuery = query(themesRef);
@@ -90,7 +97,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     };
 
     fetchThemes();
-  }, []);
+  }, [currentUser, showModal]);
 
   // Filter themes based on category, difficulty, and search term
   const filterThemes = (
@@ -122,7 +129,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // If we don't have themes from the database yet, provide mock themes for development
   useEffect(() => {
-    if (!loading && themes.length === 0 && !error) {
+    if (!loading && themes.length === 0 && !error && currentUser) {
       const mockThemes: Theme[] = [
         {
           id: "theme1",
@@ -165,7 +172,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setThemes(mockThemes);
       setFilteredThemes(mockThemes);
     }
-  }, [loading, themes.length, error]);
+  }, [loading, themes.length, error, currentUser]);
 
   const value = {
     themes,
