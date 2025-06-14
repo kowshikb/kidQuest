@@ -21,11 +21,12 @@ import { useSound } from "../contexts/SoundContext";
 
 const Dashboard: React.FC = () => {
   const { userProfile, currentUser } = useAuth();
-  const { themes, fetchThemes } = useTheme() as any;
+  const { themes, loading: themesLoading, fetchThemes } = useTheme() as any;
   const { playSound } = useSound();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [themesLoaded, setThemesLoaded] = useState(false);
 
   // Update time every minute for dynamic greeting
   useEffect(() => {
@@ -53,12 +54,26 @@ const Dashboard: React.FC = () => {
     setGreeting(newGreeting);
   }, [currentTime]);
 
-  // Fetch themes when user is authenticated (background loading)
+  // Fetch themes when user is authenticated and track loading state
   useEffect(() => {
-    if (currentUser && fetchThemes && themes.length === 0) {
-      fetchThemes(currentUser).catch(console.error);
+    if (currentUser && fetchThemes && !themesLoaded && !themesLoading) {
+      fetchThemes(currentUser)
+        .then(() => {
+          setThemesLoaded(true);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch themes:", error);
+          setThemesLoaded(true); // Set to true even on error to stop loading state
+        });
     }
-  }, [currentUser, fetchThemes, themes.length]);
+  }, [currentUser, fetchThemes, themesLoaded, themesLoading]);
+
+  // Reset themes loaded state when user changes
+  useEffect(() => {
+    if (!currentUser) {
+      setThemesLoaded(false);
+    }
+  }, [currentUser]);
 
   // Navigation with sound
   const handleNavigate = (path: string) => {
@@ -157,10 +172,12 @@ const Dashboard: React.FC = () => {
     return (coins % 100) / 100;
   };
 
-  // Find a recommended quest
-  const recommendedQuest = themes.find((theme: any) =>
-    theme.tasks?.some((task: any) => !userProfile?.completedTasks?.includes(task.id))
-  );
+  // Find a recommended quest - only show if themes are loaded and available
+  const recommendedQuest = themesLoaded && themes && themes.length > 0 
+    ? themes.find((theme: any) =>
+        theme.tasks?.some((task: any) => !userProfile?.completedTasks?.includes(task.id))
+      )
+    : null;
 
   const userLevel = getUserLevel(totalCoins);
   const progressToNext = getProgressToNextLevel(totalCoins);
@@ -340,65 +357,69 @@ const Dashboard: React.FC = () => {
           </motion.div>
         </motion.div>
 
-        {/* Featured Quest Recommendation */}
-        {recommendedQuest && (
-          <motion.div
-            className="mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <h2 className="text-3xl font-bold text-purple-900 mb-6 text-center">
-              🌟 Featured Quest
-            </h2>
+        {/* Featured Quest Recommendation - Only show when themes are properly loaded */}
+        <AnimatePresence mode="wait">
+          {recommendedQuest && (
             <motion.div
-              className="relative bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-700 rounded-3xl p-8 shadow-2xl shadow-purple-500/25 overflow-hidden cursor-pointer"
-              onClick={() => handleNavigate("/themes")}
-              whileHover={{ 
-                scale: 1.02,
-                shadow: "0 25px 50px -12px rgba(139, 92, 246, 0.4)"
-              }}
-              transition={{ duration: 0.3 }}
+              className="mb-12"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              key="featured-quest"
             >
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-4 right-4 text-6xl">🎯</div>
-                <div className="absolute bottom-4 left-4 text-4xl">✨</div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-5">🏆</div>
-              </div>
-
-              <div className="relative z-10 flex items-center">
-                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl mr-6">
-                  <Rocket size={32} className="text-white" />
+              <h2 className="text-3xl font-bold text-purple-900 mb-6 text-center">
+                🌟 Featured Quest
+              </h2>
+              <motion.div
+                className="relative bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-700 rounded-3xl p-8 shadow-2xl shadow-purple-500/25 overflow-hidden cursor-pointer"
+                onClick={() => handleNavigate("/themes")}
+                whileHover={{ 
+                  scale: 1.02,
+                  shadow: "0 25px 50px -12px rgba(139, 92, 246, 0.4)"
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-4 right-4 text-6xl">🎯</div>
+                  <div className="absolute bottom-4 left-4 text-4xl">✨</div>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-8xl opacity-5">🏆</div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-2">
-                    {recommendedQuest.name}
-                  </h3>
-                  <p className="text-purple-100 mb-4 text-lg">
-                    {recommendedQuest.description}
-                  </p>
-                  <div className="flex items-center space-x-4">
-                    <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
-                      {recommendedQuest.difficulty}
-                    </span>
-                    <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
-                      {recommendedQuest.category}
-                    </span>
-                    <motion.div
-                      className="flex items-center text-yellow-300 font-bold"
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <Zap size={20} className="mr-1" />
-                      Start Quest
-                    </motion.div>
+
+                <div className="relative z-10 flex items-center">
+                  <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl mr-6">
+                    <Rocket size={32} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {recommendedQuest.name}
+                    </h3>
+                    <p className="text-purple-100 mb-4 text-lg">
+                      {recommendedQuest.description}
+                    </p>
+                    <div className="flex items-center space-x-4">
+                      <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
+                        {recommendedQuest.difficulty}
+                      </span>
+                      <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
+                        {recommendedQuest.category}
+                      </span>
+                      <motion.div
+                        className="flex items-center text-yellow-300 font-bold"
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Zap size={20} className="mr-1" />
+                        Start Quest
+                      </motion.div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </AnimatePresence>
 
         {/* Enhanced Navigation Cards */}
         <motion.div
