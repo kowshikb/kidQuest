@@ -381,6 +381,7 @@ const ThemePage: React.FC = () => {
                               </p>
                               <div className="flex items-center mt-1">
                                 <span className="text-yellow-600 flex items-center text-sm">
+                                  {/* Consistent Magic Coin Symbol */}
                                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />

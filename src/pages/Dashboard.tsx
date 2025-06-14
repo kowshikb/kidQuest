@@ -40,7 +40,7 @@ const Dashboard: React.FC = () => {
     let newGreeting = "";
 
     if (hour < 6) {
-      newGreeting = "🌙 Late Night Explorer";
+      newGreeting = "🌙 Late Night Champion";
     } else if (hour < 12) {
       newGreeting = "🌅 Good Morning";
     } else if (hour < 17) {
@@ -330,7 +330,11 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-4">
-                <Gem size={24} className="text-white" />
+                {/* Consistent Magic Coin Symbol */}
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
+                </svg>
               </div>
               <div>
                 <p className="text-sm text-yellow-600 font-medium">Magic Coins</p>

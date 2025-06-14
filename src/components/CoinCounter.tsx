@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins as Coin } from 'lucide-react';
 
 interface CoinCounterProps {
   coins: number;
@@ -42,7 +41,11 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
         whileHover={{ scale: 1.05 }}
         transition={{ duration: 0.2 }}
       >
-        <Coin className="mr-1" size={18} />
+        {/* Consistent Magic Coin Symbol */}
+        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
+        </svg>
         <AnimatePresence mode="wait">
           <motion.span
             key={coins}
@@ -69,7 +72,10 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
           >
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2 rounded-lg shadow-xl border border-purple-300 text-xs whitespace-nowrap">
               <div className="font-medium text-yellow-300 flex items-center">
-                <Coin size={14} className="mr-1" />
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
+                </svg>
                 Magic Coins
               </div>
               <div className="text-purple-100 text-xs mt-0.5">

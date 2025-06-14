@@ -5,7 +5,6 @@ import {
   Edit,
   CheckCircle,
   LogOut,
-  Coins as Coin,
   Award,
   Users,
   Crown,
@@ -423,7 +422,11 @@ const ProfilePage: React.FC = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                       <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl text-center">
                         <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                          <Coin size={20} className="text-white" />
+                          {/* Consistent Magic Coin Symbol */}
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
+                          </svg>
                         </div>
                         <div className="text-sm text-purple-600 mb-1">Coins</div>
                         <div className="font-bold text-purple-900 text-xl">

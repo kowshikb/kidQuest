@@ -17,7 +17,7 @@ import {
   getDocs,
   doc,
   getDoc,
-  Timestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { db, getBasePath } from "../firebase/config";
 import { useAuth } from "../contexts/AuthContext";
@@ -33,60 +33,77 @@ const RoomsPage: React.FC = () => {
 
   const [myRooms, setMyRooms] = useState<Room[]>([]);
   const [joinRoomId, setJoinRoomId] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false for instant UI
+  const [initialLoad, setInitialLoad] = useState(true);
 
-  // Fetch user's rooms
+  // Optimized room fetching with real-time updates
   useEffect(() => {
-    const fetchRooms = async () => {
-      if (!currentUser) return;
+    if (!currentUser || !userProfile) return;
 
+    let unsubscribe: (() => void) | null = null;
+
+    const setupRoomListener = async () => {
       try {
         setLoading(true);
 
         const roomsRef = collection(db, `${getBasePath()}/rooms`);
-        // Query for rooms where current user is in participants
-        const q = query(
+        
+        // Set up real-time listener for rooms where user is a participant
+        unsubscribe = onSnapshot(
           roomsRef,
-          where("participants", "array-contains-any", [
-            { userId: currentUser.uid },
-          ])
+          (snapshot) => {
+            const rooms: Room[] = [];
+
+            snapshot.docs.forEach((docSnap) => {
+              const roomData = {
+                id: docSnap.id,
+                ...docSnap.data(),
+                messages: docSnap.data().messages || [],
+                currentChallenge: docSnap.data().currentChallenge || null,
+              } as Room;
+
+              // Only include rooms where current user is a participant
+              if (roomData.participants?.some(p => p.userId === currentUser.uid)) {
+                rooms.push(roomData);
+              }
+            });
+
+            // Sort rooms by creation time (newest first)
+            rooms.sort((a, b) => b.createdAt - a.createdAt);
+
+            setMyRooms(rooms);
+            setLoading(false);
+            setInitialLoad(false);
+          },
+          (error) => {
+            console.error("Error listening to rooms:", error);
+            setLoading(false);
+            setInitialLoad(false);
+            
+            if (initialLoad) {
+              showModal({
+                title: "Room Fetch Error",
+                message: "We couldn't load your challenge rooms. Please try again!",
+                type: "error",
+              });
+            }
+          }
         );
-
-        const snapshot = await getDocs(q);
-        const rooms: Room[] = [];
-
-        // Process all rooms where user is a participant
-        for (const docSnap of snapshot.docs) {
-          const roomData = {
-            id: docSnap.id,
-            ...docSnap.data(),
-            messages: docSnap.data().messages || [],
-            currentChallenge: docSnap.data().currentChallenge || null,
-          } as Room;
-
-          rooms.push(roomData);
-        }
-
-        // Sort rooms by creation time (newest first)
-        rooms.sort((a, b) => b.createdAt - a.createdAt);
-
-        setMyRooms(rooms);
       } catch (error) {
-        console.error("Error fetching rooms:", error);
-        showModal({
-          title: "Room Fetch Error",
-          message: "We couldn't load your challenge rooms. Please try again!",
-          type: "error",
-        });
-      } finally {
+        console.error("Error setting up room listener:", error);
         setLoading(false);
+        setInitialLoad(false);
       }
     };
 
-    if (currentUser && userProfile) {
-      fetchRooms();
-    }
-  }, [currentUser, userProfile]);
+    setupRoomListener();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [currentUser, userProfile, initialLoad]);
 
   // Create a new room
   const createRoom = async () => {
@@ -104,7 +121,7 @@ const RoomsPage: React.FC = () => {
         isActive: true,
         difficulty: "Easy",
         category: "General",
-        createdBy: currentUser.uid, // Required by Firestore rules
+        createdBy: currentUser.uid,
         createdAt: Date.now(),
         participants: [
           {
@@ -325,12 +342,8 @@ const RoomsPage: React.FC = () => {
           My Challenge Rooms
         </h2>
 
-        {loading ? (
-          <div className="text-center py-10">
-            <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-purple-600">Loading your magical rooms...</p>
-          </div>
-        ) : myRooms.length === 0 ? (
+        {/* Show immediate content without loading spinner */}
+        {myRooms.length === 0 && !loading ? (
           <div className="bg-white rounded-2xl shadow-md p-8 text-center border-2 border-purple-100">
             <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
               <MessageSquare size={32} className="text-purple-600" />
@@ -358,6 +371,8 @@ const RoomsPage: React.FC = () => {
                   className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100"
                   whileHover={{ y: -5 }}
                   transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                 >
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
@@ -414,6 +429,14 @@ const RoomsPage: React.FC = () => {
                 </motion.div>
               );
             })}
+          </div>
+        )}
+
+        {/* Only show loading indicator during initial load and when there are no rooms yet */}
+        {loading && initialLoad && myRooms.length === 0 && (
+          <div className="text-center py-6">
+            <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-purple-600 text-sm">Loading rooms...</p>
           </div>
         )}
       </motion.div>
