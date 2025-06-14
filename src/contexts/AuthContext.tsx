@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ...defaultUserProfile,
       userId: userId,
       friendlyUserId: generateFriendlyUserId(),
-      username: `Champion${Math.floor(Math.random() * 10000)}`,
+      username: `Champion${Math.floor(Math.random() * 10000)}`, // ✅ FIXED: Changed from Explorer to Champion
       avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
       createdAt: serverTimestamp(),
       lastActive: serverTimestamp(),
@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...defaultUserProfile,
         userId: userId,
         friendlyUserId: friendlyUserId,
-        username: `Champion${Math.floor(Math.random() * 10000)}`,
+        username: `Champion${Math.floor(Math.random() * 10000)}`, // ✅ FIXED: Changed from Explorer to Champion
         avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
         createdAt: serverTimestamp(),
         lastActive: serverTimestamp(),
