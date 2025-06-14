@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Check, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTheme, Theme, Task } from '../contexts/ThemeContext';
@@ -7,13 +7,20 @@ import { useSound } from '../contexts/SoundContext';
 import { useModal } from '../contexts/ModalContext';
 
 const ThemePage: React.FC = () => {
-  const { filteredThemes, filterThemes, activeFilters } = useTheme();
-  const { userProfile, addCompletedTask } = useAuth();
+  const { filteredThemes, filterThemes, activeFilters, fetchThemes } = useTheme() as any;
+  const { userProfile, addCompletedTask, currentUser } = useAuth();
   const { playSound } = useSound();
   const { showModal } = useModal();
   const [expandedThemeId, setExpandedThemeId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+
+  // Fetch themes when user is authenticated
+  useEffect(() => {
+    if (currentUser && fetchThemes) {
+      fetchThemes(currentUser);
+    }
+  }, [currentUser, fetchThemes]);
 
   // Define categories and difficulties for filtering
   const categories = [
@@ -129,6 +136,17 @@ const ThemePage: React.FC = () => {
     playSound('click');
     setIsFilterMenuOpen(!isFilterMenuOpen);
   };
+
+  // Don't render if user is not authenticated
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-purple-800">Please log in to access magical quests!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6">

@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db, getBasePath } from '../firebase/config';
 import { useModal } from './ModalContext';
-import { useAuth } from './AuthContext';
 
 export interface Task {
   id: string;
@@ -53,7 +52,7 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [filteredThemes, setFilteredThemes] = useState<Theme[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false since we don't load themes until user is authenticated
   const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState({
     category: null as string | null,
@@ -61,43 +60,55 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     searchTerm: null as string | null,
   });
   const { showModal } = useModal();
-  const { currentUser } = useAuth();
 
-  // Fetch themes from Firestore only when user is authenticated
+  // Reset themes when component mounts (useful for logout scenarios)
   useEffect(() => {
-    const fetchThemes = async () => {
-      if (!currentUser) {
-        setLoading(false);
-        return;
-      }
+    setThemes([]);
+    setFilteredThemes([]);
+    setError(null);
+    setLoading(false);
+  }, []);
 
-      try {
-        const themesRef = collection(db, `${getBasePath()}/themes`);
-        const themesQuery = query(themesRef);
-        const querySnapshot = await getDocs(themesQuery);
-        
-        const themesData: Theme[] = [];
-        querySnapshot.forEach((doc) => {
-          themesData.push({ id: doc.id, ...doc.data() } as Theme);
-        });
-        
-        setThemes(themesData);
-        setFilteredThemes(themesData);
-      } catch (err) {
-        console.error("Error fetching themes:", err);
-        setError("Failed to load themes");
+  // Fetch themes from Firestore - this will be called by components that need themes
+  const fetchThemes = async (currentUser: any) => {
+    if (!currentUser) {
+      setThemes([]);
+      setFilteredThemes([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const themesRef = collection(db, `${getBasePath()}/themes`);
+      const themesQuery = query(themesRef);
+      const querySnapshot = await getDocs(themesQuery);
+      
+      const themesData: Theme[] = [];
+      querySnapshot.forEach((doc) => {
+        themesData.push({ id: doc.id, ...doc.data() } as Theme);
+      });
+      
+      setThemes(themesData);
+      setFilteredThemes(themesData);
+    } catch (err) {
+      console.error("Error fetching themes:", err);
+      setError("Failed to load themes");
+      
+      // Only show modal if we have a user (avoid showing errors on logout)
+      if (currentUser) {
         showModal({
           title: "Magical Library Error",
           message: "We couldn't fetch the quest themes. Let's try again soon!",
           type: "error"
         });
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchThemes();
-  }, [currentUser, showModal]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter themes based on category, difficulty, and search term
   const filterThemes = (
@@ -127,9 +138,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setActiveFilters({ category, difficulty, searchTerm });
   };
 
-  // If we don't have themes from the database yet, provide mock themes for development
+  // Provide mock themes for development when no themes are loaded
   useEffect(() => {
-    if (!loading && themes.length === 0 && !error && currentUser) {
+    if (!loading && themes.length === 0 && !error) {
       const mockThemes: Theme[] = [
         {
           id: "theme1",
@@ -172,7 +183,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setThemes(mockThemes);
       setFilteredThemes(mockThemes);
     }
-  }, [loading, themes.length, error, currentUser]);
+  }, [loading, themes.length, error]);
 
   const value = {
     themes,
@@ -180,8 +191,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     error,
     filteredThemes,
     filterThemes,
-    activeFilters
-  };
+    activeFilters,
+    fetchThemes // Expose fetchThemes for components to call when needed
+  } as ThemeContextType & { fetchThemes: (currentUser: any) => Promise<void> };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
