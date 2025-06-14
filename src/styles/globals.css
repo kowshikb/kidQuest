@@ -1,0 +1,210 @@
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&family=Gaegu:wght@300;400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: 122, 67, 232;
+  --color-secondary: 53, 168, 224;
+  --color-accent: 255, 121, 63;
+  --color-success: 34, 197, 94;
+  --color-warning: 250, 204, 21;
+  --color-error: 239, 68, 68;
+  --mascot-size: 120px;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: "Baloo 2", cursive;
+  @apply text-purple-900;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Gaegu", cursive;
+  @apply font-bold;
+}
+
+/* Magic Button Styles */
+.btn-magic {
+  @apply relative px-6 py-3 rounded-full font-medium text-white shadow-lg transform transition-all duration-300 overflow-hidden;
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-primary)),
+    rgb(var(--color-secondary))
+  );
+}
+
+.btn-magic:hover {
+  @apply shadow-xl -translate-y-1;
+}
+
+.btn-magic:active {
+  @apply translate-y-0 scale-95;
+}
+
+.btn-magic::before {
+  content: "";
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-secondary)),
+    rgb(var(--color-primary))
+  );
+}
+
+.btn-magic:hover::before {
+  @apply opacity-100;
+}
+
+.btn-magic span {
+  @apply relative z-10;
+}
+
+/* Card Styles */
+.magic-card {
+  @apply bg-white rounded-2xl shadow-md p-6 transition-all duration-300;
+  border: 2px solid rgba(var(--color-primary), 0.1);
+}
+
+.magic-card:hover {
+  @apply shadow-lg;
+  border-color: rgba(var(--color-primary), 0.3);
+  transform: translateY(-5px);
+}
+
+/* Storybook Input */
+.storybook-input {
+  @apply px-4 py-3 rounded-full border-2 border-purple-200 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-300;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Shiny Effects */
+.shiny-badge {
+  @apply relative overflow-hidden;
+}
+
+.shiny-badge::after {
+  content: "";
+  @apply absolute inset-0 opacity-0;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0) 70%,
+    transparent 100%
+  );
+  transition: opacity 0.3s, transform 0.8s ease-in-out;
+  transform: translateX(-100%);
+}
+
+.shiny-badge:hover::after {
+  @apply opacity-100;
+  transform: translateX(100%);
+}
+
+/* Animation Classes */
+.bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Mascot container */
+.mascot-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: var(--mascot-size);
+  height: var(--mascot-size);
+  z-index: 50;
+}
+
+/* Task completion animation */
+.task-complete-animation {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Coin animation */
+.coin {
+  @apply absolute h-8 w-8 rounded-full bg-yellow-400 z-50 shadow-md;
+  animation: flyToCoinCounter 1s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+
+@keyframes flyToCoinCounter {
+  0% {
+    transform: scale(0.6) translate(0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.2) translate(var(--targetX), var(--targetY));
+    opacity: 0;
+  }
+}
+
+/* Sparkles */
+.sparkle {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  animation: sparkle 0.8s ease-in-out forwards;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}

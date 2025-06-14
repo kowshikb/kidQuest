@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Users can upload and read their own avatars
+    match /avatars/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Users can read other users' avatars (for displaying in app)
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // Public assets like theme images, mascot assets
+    match /public/{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // Validate file types and sizes for avatars
+    match /avatars/{userId}/{fileName} {
+      allow write: if request.auth != null && 
+        request.auth.uid == userId &&
+        resource.size < 5 * 1024 * 1024 && // Max 5MB
+        request.resource.contentType.matches('image/.*');
+    }
+  }
+} 

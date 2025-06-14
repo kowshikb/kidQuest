@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function to check if user is involved in friend request
+    function isInvolvedInFriendRequest() {
+      return isAuthenticated() && 
+        (resource.data.fromUserId == request.auth.uid || 
+         resource.data.toUserId == request.auth.uid);
+    }
+
+    // Users collection - users can read/write their own profile, read others for leaderboards
+    match /artifacts/{appId}/public/data/users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+      allow create: if isOwner(userId) && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['userId', 'friendlyUserId', 'username', 'avatarUrl', 'coins', 'location', 'completedTasks', 'friendsList']) &&
+        request.resource.data.coins is number &&
+        request.resource.data.coins >= 0;
+      allow update: if isOwner(userId) && 
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.friendlyUserId == resource.data.friendlyUserId;
+    }
+
+    // Themes collection - read-only for authenticated users, write for admin only
+    match /artifacts/{appId}/public/data/themes/{themeId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admin/cloud functions can modify themes
+    }
+
+    // Rooms collection - authenticated users can read and participate
+    match /artifacts/{appId}/public/data/rooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAuthenticated() && 
+        (resource.data.createdBy == request.auth.uid || 
+         isAuthenticated()); // Allow any authenticated user to join/update
+    }
+
+    // Friend requests collection - users can manage their own requests
+    match /artifacts/{appId}/public/data/friendRequests/{requestId} {
+      allow read: if isInvolvedInFriendRequest();
+      allow create: if isAuthenticated() && 
+        request.resource.data.fromUserId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() && 
+        resource.data.toUserId == request.auth.uid &&
+        request.resource.data.fromUserId == resource.data.fromUserId &&
+        request.resource.data.status in ['accepted', 'rejected'];
+      allow delete: if isAuthenticated() && 
+        resource.data.fromUserId == request.auth.uid;
+    }
+
+    // Leaderboards collection - read-only for users
+    match /artifacts/{appId}/public/data/leaderboards/{leaderboardId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only cloud functions can update leaderboards
+    }
+
+    // Game stats collection - read-only for users
+    match /artifacts/{appId}/public/data/gameStats/{statsId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only cloud functions can update stats
+    }
+
+    // System configuration - read-only for users
+    match /artifacts/{appId}/public/data/systemConfig/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admin can modify system config
+    }
+
+    // Deny all other requests
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 
