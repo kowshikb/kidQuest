@@ -30,7 +30,7 @@ const Header: React.FC = () => {
     { path: "/themes", label: "Quests", icon: <Award size={20} /> },
     { path: "/rooms", label: "Challenges", icon: <MessageSquare size={20} /> },
     { path: "/friends", label: "Friends", icon: <Users size={20} /> },
-    { path: "/leaderboard", label: "Champions", icon: <Award size={20} /> },
+    { path: "/leaderboard", label: "Leaderboard", icon: <Award size={20} /> },
     { path: "/profile", label: "Profile", icon: <User size={20} /> },
   ];
 
