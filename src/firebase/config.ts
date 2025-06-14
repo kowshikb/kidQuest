@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 
@@ -20,26 +20,34 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Create a promise that resolves when persistence is ready
-export const persistenceReadyPromise = enableIndexedDbPersistence(db)
+// Enable offline persistence with optimized settings
+export const persistenceReadyPromise = enableIndexedDbPersistence(db, {
+  forceOwnership: false // Allow multiple tabs
+})
   .then(() => {
     console.log('IndexedDB persistence initialized successfully');
     return true;
   })
   .catch((err) => {
     if (err.code === 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time
       console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time');
     } else if (err.code === 'unimplemented') {
-      // The current browser doesn't support persistence
       console.warn('The current browser doesn\'t support persistence');
     }
-    // Even if persistence fails, we want to continue with online-only mode
     return false;
   });
 
 const auth = getAuth(app);
-const analytics = getAnalytics(app);
+
+// Initialize analytics only in production
+let analytics;
+try {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    analytics = getAnalytics(app);
+  }
+} catch (error) {
+  console.warn('Analytics initialization failed:', error);
+}
 
 // Get app_id from environment or fallback
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'kidquest-champions-dev';

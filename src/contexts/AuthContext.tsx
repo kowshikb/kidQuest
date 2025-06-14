@@ -119,95 +119,147 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
       if (user) {
-        await fetchUserProfile(user.uid);
-        // Update last active timestamp
-        await updateLastActive(user.uid);
+        // Start profile fetch but don't wait for it to complete before setting loading to false
+        fetchUserProfileOptimized(user.uid);
+        // Update last active timestamp in background
+        updateLastActiveBackground(user.uid);
       } else {
         setUserProfile(null);
       }
+      
+      // Set loading to false immediately after auth state is determined
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  // Update user's last active timestamp
-  const updateLastActive = async (userId: string) => {
+  // Optimized profile fetching with immediate fallback
+  const fetchUserProfileOptimized = async (userId: string) => {
     try {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
-      await updateDoc(userRef, {
-        lastActive: serverTimestamp(),
-      });
+      
+      // Set a timeout to ensure we don't wait too long
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+      );
+      
+      const fetchPromise = getDoc(userRef);
+      
+      try {
+        const userSnap = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        
+        if (userSnap.exists()) {
+          const profileData = userSnap.data() as UserProfile;
+          // Ensure all required fields exist with defaults
+          const completeProfile = {
+            ...defaultUserProfile,
+            ...profileData,
+            userId: userId, // Add userId to profile
+            location: {
+              ...defaultUserProfile.location,
+              ...profileData.location,
+            },
+          };
+          setUserProfile(completeProfile);
+        } else {
+          // Create new profile for new users in background
+          createNewUserProfileBackground(userId);
+        }
+      } catch (timeoutError) {
+        // If fetch times out, create a temporary profile and fetch in background
+        console.warn("Profile fetch timed out, using temporary profile");
+        createTemporaryProfile(userId);
+        // Continue trying to fetch real profile in background
+        fetchUserProfileBackground(userId);
+      }
     } catch (error) {
-      // Silently fail - this is not critical
-      console.warn("Could not update lastActive:", error);
+      console.error("Error in optimized profile fetch:", error);
+      createTemporaryProfile(userId);
     }
   };
 
-  const fetchUserProfile = async (userId: string, retryCount = 0) => {
+  // Create temporary profile for immediate UI display
+  const createTemporaryProfile = (userId: string) => {
+    const tempProfile = {
+      ...defaultUserProfile,
+      userId: userId,
+      friendlyUserId: generateFriendlyUserId(),
+      username: `Explorer${Math.floor(Math.random() * 10000)}`,
+      avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
+      createdAt: serverTimestamp(),
+      lastActive: serverTimestamp(),
+    };
+    setUserProfile(tempProfile);
+  };
+
+  // Background profile creation
+  const createNewUserProfileBackground = async (userId: string) => {
+    try {
+      const friendlyUserId = generateFriendlyUserId();
+      const newProfile = {
+        ...defaultUserProfile,
+        userId: userId,
+        friendlyUserId: friendlyUserId,
+        username: `Explorer${Math.floor(Math.random() * 10000)}`,
+        avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
+        createdAt: serverTimestamp(),
+        lastActive: serverTimestamp(),
+      };
+      
+      const userRef = doc(db, `${getBasePath()}/users/${userId}`);
+      await setDoc(userRef, newProfile);
+      setUserProfile(newProfile);
+    } catch (error) {
+      console.error("Background profile creation failed:", error);
+    }
+  };
+
+  // Background profile fetching (retry mechanism)
+  const fetchUserProfileBackground = async (userId: string, retryCount = 0) => {
     try {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
         const profileData = userSnap.data() as UserProfile;
-        // Ensure all required fields exist with defaults
         const completeProfile = {
           ...defaultUserProfile,
           ...profileData,
-          userId: userId, // Add userId to profile
+          userId: userId,
           location: {
             ...defaultUserProfile.location,
             ...profileData.location,
           },
         };
         setUserProfile(completeProfile);
-      } else {
-        // Create new profile for new users
-        const friendlyUserId = generateFriendlyUserId();
-        const newProfile = {
-          ...defaultUserProfile,
-          userId: userId,
-          friendlyUserId: friendlyUserId,
-          username: `Explorer${Math.floor(Math.random() * 10000)}`,
-          avatarUrl:
-            AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
-          createdAt: serverTimestamp(),
-          lastActive: serverTimestamp(),
-        };
-        await setDoc(userRef, newProfile);
-        setUserProfile(newProfile);
+      } else if (retryCount < 2) {
+        // Retry after a delay
+        setTimeout(() => {
+          fetchUserProfileBackground(userId, retryCount + 1);
+        }, 1000 * (retryCount + 1));
       }
     } catch (error) {
-      console.error("Fetch profile error:", error);
-
-      // Retry logic for network issues
+      console.error("Background profile fetch error:", error);
       if (retryCount < 2) {
-        console.log(`Retrying profile fetch (attempt ${retryCount + 1})`);
         setTimeout(() => {
-          fetchUserProfile(userId, retryCount + 1);
-        }, 1000 * (retryCount + 1)); // Progressive delay
-        return;
+          fetchUserProfileBackground(userId, retryCount + 1);
+        }, 1000 * (retryCount + 1));
       }
+    }
+  };
 
-      // If all retries failed, set a default profile to prevent app breaking
-      const fallbackProfile = {
-        ...defaultUserProfile,
-        userId: userId,
-        friendlyUserId: generateFriendlyUserId(),
-        username: `Explorer${Math.floor(Math.random() * 10000)}`,
-        createdAt: serverTimestamp(),
+  // Update user's last active timestamp in background
+  const updateLastActiveBackground = async (userId: string) => {
+    try {
+      const userRef = doc(db, `${getBasePath()}/users/${userId}`);
+      await updateDoc(userRef, {
         lastActive: serverTimestamp(),
-      };
-      setUserProfile(fallbackProfile);
-
-      // Only show error modal after all retries failed
-      showModal({
-        title: "Connection Issue",
-        message:
-          "We're having trouble loading your profile. Using a temporary profile for now. Your data will sync when connection improves!",
-        type: "warning",
       });
+    } catch (error) {
+      // Silently fail - this is not critical for UI
+      console.warn("Could not update lastActive:", error);
     }
   };
 
@@ -245,7 +297,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: "error",
       });
 
-      // Re-throw for Login component to handle
       throw error;
     } finally {
       setLoading(false);
@@ -262,7 +313,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let userMessage = "Unable to sign in. Please try again.";
 
-      // Handle specific Firebase errors with user-friendly messages
       switch (error.code) {
         case "auth/invalid-credential":
           userMessage =
@@ -301,7 +351,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: "error",
       });
 
-      // Re-throw for Login component to handle
       throw error;
     } finally {
       setLoading(false);
@@ -318,7 +367,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let userMessage = "Unable to create account. Please try again.";
 
-      // Handle specific Firebase errors with user-friendly messages
       switch (error.code) {
         case "auth/email-already-in-use":
           userMessage =
@@ -349,7 +397,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: "error",
       });
 
-      // Re-throw for Login component to handle
       throw error;
     } finally {
       setLoading(false);
@@ -362,7 +409,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        await fetchUserProfile(result.user.uid);
         playSound("success");
       }
     } catch (error: any) {
@@ -370,17 +416,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let userMessage = "Unable to sign in with Google. Please try again.";
 
-      // Handle specific Google auth errors
       switch (error.code) {
         case "auth/popup-closed-by-user":
-          // Don't show error for user-cancelled action
           return;
         case "auth/popup-blocked":
           userMessage =
             "Pop-up was blocked by your browser. Please allow pop-ups and try again.";
           break;
         case "auth/cancelled-popup-request":
-          // Don't show error for cancelled requests
           return;
         case "auth/network-request-failed":
           userMessage =
@@ -404,7 +447,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: "error",
       });
 
-      // Re-throw for Login component to handle
       throw error;
     } finally {
       setLoading(false);
@@ -543,7 +585,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      // Send password reset email directly - Firebase will handle validation
       console.log("Sending password reset email to:", email);
       await sendPasswordResetEmail(auth, email);
 
@@ -560,7 +601,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let userMessage = "Unable to reset password. Please try again.";
 
-      // Handle specific Firebase errors with user-friendly messages
       switch (error.code) {
         case "auth/user-not-found":
           userMessage =
@@ -587,7 +627,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: "error",
       });
 
-      // Re-throw for Login component to handle
       throw error;
     }
   };

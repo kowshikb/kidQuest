@@ -7,8 +7,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useSound } from "../contexts/SoundContext";
 
 const Dashboard: React.FC = () => {
-  const { userProfile } = useAuth();
-  const { themes } = useTheme();
+  const { userProfile, currentUser } = useAuth();
+  const { themes, fetchThemes } = useTheme() as any;
   const { playSound } = useSound();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
@@ -28,6 +28,14 @@ const Dashboard: React.FC = () => {
 
     setGreeting(newGreeting);
   }, []);
+
+  // Fetch themes when user is authenticated (background loading)
+  useEffect(() => {
+    if (currentUser && fetchThemes && themes.length === 0) {
+      // Fetch themes in background without blocking UI
+      fetchThemes(currentUser).catch(console.error);
+    }
+  }, [currentUser, fetchThemes, themes.length]);
 
   // Navigation with sound
   const handleNavigate = (path: string) => {
@@ -89,10 +97,11 @@ const Dashboard: React.FC = () => {
   const completedTasksCount = userProfile?.completedTasks?.length || 0;
 
   // Find a recommended quest (first incomplete theme with tasks)
-  const recommendedQuest = themes.find((theme) =>
-    theme.tasks.some((task) => !userProfile?.completedTasks?.includes(task.id))
+  const recommendedQuest = themes.find((theme: any) =>
+    theme.tasks?.some((task: any) => !userProfile?.completedTasks?.includes(task.id))
   );
 
+  // Show dashboard immediately with available data
   return (
     <motion.div
       initial={{ opacity: 0 }}
