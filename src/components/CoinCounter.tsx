@@ -34,7 +34,7 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
     <div className="relative">
       <motion.div
         ref={counterRef}
-        className="flex items-center bg-yellow-400 text-purple-900 px-3 py-1 rounded-full font-bold shadow-md cursor-help"
+        className="flex items-center bg-yellow-400 text-purple-900 px-3 py-1 rounded-full font-bold shadow-md cursor-pointer"
         variants={counterVariants}
         animate={isAnimating ? 'animate' : 'idle'}
         onMouseEnter={() => setIsHovered(true)}
@@ -57,7 +57,7 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
         </AnimatePresence>
       </motion.div>
 
-      {/* Tooltip - positioned below the coin counter with app theme colors */}
+      {/* Compact Tooltip - positioned below the coin counter */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
@@ -67,16 +67,16 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
             exit={{ opacity: 0, scale: 0.8, y: -10 }}
             transition={{ duration: 0.2, ease: "backOut" }}
           >
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-xl shadow-xl border-2 border-purple-300 text-sm whitespace-nowrap">
-              <div className="font-bold text-yellow-300 flex items-center">
-                <Coin size={16} className="mr-2" />
-                Your Magic Coins
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2 rounded-lg shadow-xl border border-purple-300 text-xs whitespace-nowrap">
+              <div className="font-medium text-yellow-300 flex items-center">
+                <Coin size={14} className="mr-1" />
+                Magic Coins: {coins}
               </div>
-              <div className="text-purple-100 text-xs mt-1">
-                Complete quests to earn more magical rewards!
+              <div className="text-purple-100 text-xs mt-0.5">
+                Complete quests to earn more!
               </div>
               {/* Tooltip arrow positioned at the top for below positioning */}
-              <div className="absolute bottom-full right-4">
+              <div className="absolute bottom-full right-3">
                 <div className="border-4 border-transparent border-b-purple-600"></div>
               </div>
             </div>
