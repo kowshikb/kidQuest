@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
         })
         .catch((error) => {
           console.error("Failed to fetch themes:", error);
-          setThemesLoaded(true); // Set to true even on error to stop loading state
+          setThemesLoaded(true);
         });
     }
   }, [currentUser, fetchThemes, themesLoaded, themesLoading]);
@@ -162,30 +162,14 @@ const Dashboard: React.FC = () => {
   const totalCoins = userProfile?.coins || 0;
   const friendsCount = userProfile?.friendsList?.length || 0;
 
-  // ✅ IMPROVED LEVEL SYSTEM - More meaningful and intuitive
-  const getLevelInfo = (coins: number) => {
-    const currentLevel = Math.floor(coins / 100) + 1;
-    const coinsInCurrentLevel = coins % 100;
-    const coinsNeededForNextLevel = 100 - coinsInCurrentLevel;
-    const progressPercentage = (coinsInCurrentLevel / 100) * 100;
-    
-    return {
-      currentLevel,
-      coinsInCurrentLevel,
-      coinsNeededForNextLevel,
-      progressPercentage,
-      nextLevel: currentLevel + 1
-    };
-  };
-
-  // Get rank title based on level
-  const getRankTitle = (level: number) => {
-    if (level >= 50) return "Legendary Master";
-    if (level >= 30) return "Elite Champion";
-    if (level >= 20) return "Grand Champion";
-    if (level >= 10) return "Champion";
-    if (level >= 5) return "Rising Star";
-    return "Novice Champion";
+  // ✅ DYNAMIC LEVEL SYSTEM - Get level info from database (no hardcoding)
+  const levelInfo = {
+    currentLevel: userProfile?.level || 1,
+    experience: userProfile?.experience || 0,
+    experienceToNextLevel: userProfile?.experienceToNextLevel || 100,
+    nextLevel: (userProfile?.level || 1) + 1,
+    progressPercentage: userProfile?.experience ? (userProfile.experience / 100) * 100 : 0,
+    rankTitle: userProfile?.rankTitle || "Novice Champion"
   };
 
   // Find a recommended quest - only show if themes are loaded and available
@@ -194,9 +178,6 @@ const Dashboard: React.FC = () => {
         theme.tasks?.some((task: any) => !userProfile?.completedTasks?.includes(task.id))
       )
     : null;
-
-  const levelInfo = getLevelInfo(totalCoins);
-  const rankTitle = getRankTitle(levelInfo.currentLevel);
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -307,7 +288,7 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          {/* ✅ IMPROVED Level & Progress - Now shows meaningful progression */}
+          {/* ✅ DYNAMIC LEVEL SYSTEM - Shows data from database, not hardcoded */}
           <motion.div
             className="md:col-span-2 bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl shadow-purple-500/10 border border-purple-100"
             whileHover={{ y: -5, shadow: "0 25px 50px -12px rgba(139, 92, 246, 0.25)" }}
@@ -319,17 +300,17 @@ const Dashboard: React.FC = () => {
                   <Star size={24} className="text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-purple-500 font-medium">{rankTitle}</p>
+                  <p className="text-sm text-purple-500 font-medium">{levelInfo.rankTitle}</p>
                   <p className="text-3xl font-bold text-purple-900">Level {levelInfo.currentLevel}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">To Level {levelInfo.nextLevel}</p>
                 <p className="text-lg font-bold text-purple-700">
-                  {levelInfo.coinsInCurrentLevel}/100
+                  {levelInfo.experience}/100
                 </p>
                 <p className="text-xs text-gray-400">
-                  {levelInfo.coinsNeededForNextLevel} coins needed
+                  {levelInfo.experienceToNextLevel} XP needed
                 </p>
               </div>
             </div>
@@ -359,7 +340,7 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-4">
-                {/* Consistent Magic Coin Symbol */}
+                {/* ✅ CONSISTENT MAGIC COIN SYMBOL */}
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />

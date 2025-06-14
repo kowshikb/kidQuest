@@ -38,19 +38,25 @@ const AVATAR_OPTIONS = [
 
 // Generate a unique user-friendly ID (KQ + 6 digits)
 const generateFriendlyUserId = (): string => {
-  const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+  const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(Math.random() * 1000)
     .toString()
-    .padStart(3, "0"); // 3 random digits
+    .padStart(3, "0");
   return `KQ${timestamp.slice(0, 3)}${random}`;
 };
 
 interface UserProfile {
-  userId: string; // Firebase UID
-  friendlyUserId: string; // User-friendly numeric ID (e.g., "KQ123456")
+  userId: string;
+  friendlyUserId: string;
   username: string;
   avatarUrl: string;
   coins: number;
+  // ✅ DYNAMIC LEVEL SYSTEM - All calculated and stored in DB
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  totalExperience: number;
+  rankTitle: string;
   location: {
     city: string;
     state: string;
@@ -58,8 +64,8 @@ interface UserProfile {
   };
   completedTasks: string[];
   friendsList: string[];
-  createdAt: any; // Firestore timestamp
-  lastActive: any; // Firestore timestamp
+  createdAt: any;
+  lastActive: any;
 }
 
 interface AuthContextType {
@@ -78,12 +84,40 @@ interface AuthContextType {
   removeFriend: (friendId: string) => Promise<void>;
 }
 
+// ✅ DYNAMIC LEVEL CALCULATION FUNCTIONS
+const calculateLevel = (totalExperience: number): number => {
+  return Math.floor(totalExperience / 100) + 1;
+};
+
+const calculateExperienceInCurrentLevel = (totalExperience: number): number => {
+  return totalExperience % 100;
+};
+
+const calculateExperienceToNextLevel = (totalExperience: number): number => {
+  return 100 - (totalExperience % 100);
+};
+
+const getRankTitle = (level: number): string => {
+  if (level >= 50) return "Legendary Master";
+  if (level >= 30) return "Elite Champion";
+  if (level >= 20) return "Grand Champion";
+  if (level >= 10) return "Champion";
+  if (level >= 5) return "Rising Star";
+  return "Novice Champion";
+};
+
 const defaultUserProfile: UserProfile = {
   userId: "",
   friendlyUserId: "",
   username: "New Champion",
   avatarUrl: AVATAR_OPTIONS[0],
   coins: 0,
+  // ✅ DYNAMIC LEVEL SYSTEM - Default values
+  level: 1,
+  experience: 0,
+  experienceToNextLevel: 100,
+  totalExperience: 0,
+  rankTitle: "Novice Champion",
   location: {
     city: "Adventure City",
     state: "Questland",
@@ -135,10 +169,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  // Helper function to update Explorer usernames to Champion
+  // ✅ AUTOMATIC CHAMPION NAME UPDATE - Helper function
   const updateExplorerToChampion = (profile: UserProfile): UserProfile => {
     if (profile.username && profile.username.startsWith("Explorer")) {
-      // Replace "Explorer" with "Champion" in the username
       const updatedUsername = profile.username.replace(/^Explorer/, "Champion");
       return {
         ...profile,
@@ -148,12 +181,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return profile;
   };
 
+  // ✅ DYNAMIC LEVEL SYSTEM - Update level data based on total experience
+  const updateLevelData = (profile: UserProfile): UserProfile => {
+    const totalExp = profile.totalExperience || profile.coins || 0; // Use coins as experience if totalExperience not set
+    
+    return {
+      ...profile,
+      totalExperience: totalExp,
+      level: calculateLevel(totalExp),
+      experience: calculateExperienceInCurrentLevel(totalExp),
+      experienceToNextLevel: calculateExperienceToNextLevel(totalExp),
+      rankTitle: getRankTitle(calculateLevel(totalExp)),
+    };
+  };
+
   // Optimized profile fetching with immediate fallback
   const fetchUserProfileOptimized = async (userId: string) => {
     try {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       
-      // Set a timeout to ensure we don't wait too long
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
       );
@@ -165,11 +211,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (userSnap.exists()) {
           const profileData = userSnap.data() as UserProfile;
-          // Ensure all required fields exist with defaults
           let completeProfile = {
             ...defaultUserProfile,
             ...profileData,
-            userId: userId, // Add userId to profile
+            userId: userId,
             location: {
               ...defaultUserProfile.location,
               ...profileData.location,
@@ -180,29 +225,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const originalUsername = completeProfile.username;
           completeProfile = updateExplorerToChampion(completeProfile);
           
-          // If username was updated, save it to the database
-          if (originalUsername !== completeProfile.username) {
-            console.log(`Updating username from "${originalUsername}" to "${completeProfile.username}"`);
+          // ✅ DYNAMIC LEVEL SYSTEM: Update level data
+          completeProfile = updateLevelData(completeProfile);
+          
+          // If username or level data was updated, save it to the database
+          const needsUpdate = originalUsername !== completeProfile.username || 
+                             !profileData.level || 
+                             !profileData.totalExperience;
+          
+          if (needsUpdate) {
+            console.log(`Updating profile data for user ${userId}`);
             try {
               await updateDoc(userRef, {
-                username: completeProfile.username
+                username: completeProfile.username,
+                level: completeProfile.level,
+                experience: completeProfile.experience,
+                experienceToNextLevel: completeProfile.experienceToNextLevel,
+                totalExperience: completeProfile.totalExperience,
+                rankTitle: completeProfile.rankTitle,
               });
             } catch (updateError) {
-              console.warn("Could not update username in database:", updateError);
-              // Continue with the updated profile even if database update fails
+              console.warn("Could not update profile in database:", updateError);
             }
           }
 
           setUserProfile(completeProfile);
         } else {
-          // Create new profile for new users in background
           createNewUserProfileBackground(userId);
         }
       } catch (timeoutError) {
-        // If fetch times out, create a temporary profile and fetch in background
         console.warn("Profile fetch timed out, using temporary profile");
         createTemporaryProfile(userId);
-        // Continue trying to fetch real profile in background
         fetchUserProfileBackground(userId);
       }
     } catch (error) {
@@ -269,21 +322,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const originalUsername = completeProfile.username;
         completeProfile = updateExplorerToChampion(completeProfile);
         
-        // If username was updated, save it to the database
-        if (originalUsername !== completeProfile.username) {
-          console.log(`Background update: "${originalUsername}" to "${completeProfile.username}"`);
+        // ✅ DYNAMIC LEVEL SYSTEM: Update level data
+        completeProfile = updateLevelData(completeProfile);
+        
+        // If username or level data was updated, save it to the database
+        const needsUpdate = originalUsername !== completeProfile.username || 
+                           !profileData.level || 
+                           !profileData.totalExperience;
+        
+        if (needsUpdate) {
+          console.log(`Background update for user ${userId}`);
           try {
             await updateDoc(userRef, {
-              username: completeProfile.username
+              username: completeProfile.username,
+              level: completeProfile.level,
+              experience: completeProfile.experience,
+              experienceToNextLevel: completeProfile.experienceToNextLevel,
+              totalExperience: completeProfile.totalExperience,
+              rankTitle: completeProfile.rankTitle,
             });
           } catch (updateError) {
-            console.warn("Could not update username in background:", updateError);
+            console.warn("Could not update profile in background:", updateError);
           }
         }
 
         setUserProfile(completeProfile);
       } else if (retryCount < 2) {
-        // Retry after a delay
         setTimeout(() => {
           fetchUserProfileBackground(userId, retryCount + 1);
         }, 1000 * (retryCount + 1));
@@ -306,7 +370,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         lastActive: serverTimestamp(),
       });
     } catch (error) {
-      // Silently fail - this is not critical for UI
       console.warn("Could not update lastActive:", error);
     }
   };
@@ -531,6 +594,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // ✅ DYNAMIC LEVEL SYSTEM - Update experience and level when completing tasks
   const addCompletedTask = async (taskId: string, coinsEarned: number) => {
     if (!currentUser || !userProfile) return;
     try {
@@ -538,11 +602,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const updatedTasks = [...userProfile.completedTasks, taskId];
       const updatedCoins = userProfile.coins + coinsEarned;
+      
+      // ✅ DYNAMIC LEVEL SYSTEM - Calculate new level data
+      const newTotalExperience = updatedCoins; // Using coins as experience points
+      const newLevel = calculateLevel(newTotalExperience);
+      const newExperience = calculateExperienceInCurrentLevel(newTotalExperience);
+      const newExperienceToNext = calculateExperienceToNextLevel(newTotalExperience);
+      const newRankTitle = getRankTitle(newLevel);
+
       const userRef = doc(db, `${getBasePath()}/users/${currentUser.uid}`);
 
+      // ✅ SAVE ALL LEVEL DATA TO DATABASE
       await updateDoc(userRef, {
         completedTasks: updatedTasks,
         coins: updatedCoins,
+        totalExperience: newTotalExperience,
+        level: newLevel,
+        experience: newExperience,
+        experienceToNextLevel: newExperienceToNext,
+        rankTitle: newRankTitle,
       });
 
       setUserProfile((prev) =>
@@ -551,6 +629,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               ...prev,
               completedTasks: updatedTasks,
               coins: updatedCoins,
+              totalExperience: newTotalExperience,
+              level: newLevel,
+              experience: newExperience,
+              experienceToNextLevel: newExperienceToNext,
+              rankTitle: newRankTitle,
             }
           : null
       );

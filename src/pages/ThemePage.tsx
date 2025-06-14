@@ -301,12 +301,13 @@ const ThemePage: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Themes List */}
+      {/* ✅ FIXED QUEST SECTION MOVEMENT - Themes List with stable layout */}
       <motion.div
         className="space-y-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
+        layout // This helps with smooth transitions
       >
         {filteredThemes.length === 0 ? (
           <div className="text-center py-12">
@@ -321,7 +322,12 @@ const ThemePage: React.FC = () => {
             <motion.div
               key={theme.id}
               className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100"
-              layout
+              layout // Smooth layout transitions
+              layoutId={theme.id} // Stable layout ID
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
             >
               {/* Theme Header */}
               <motion.div
@@ -330,6 +336,7 @@ const ThemePage: React.FC = () => {
                 }`}
                 onClick={() => toggleTheme(theme.id)}
                 whileHover={{ backgroundColor: 'rgba(233, 213, 255, 0.3)' }}
+                layout // Prevent jumping during expansion
               >
                 <div className="flex justify-between items-center">
                   <div>
@@ -361,8 +368,9 @@ const ThemePage: React.FC = () => {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="border-t-2 border-purple-100"
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="border-t-2 border-purple-100 overflow-hidden"
+                    layout // Prevent layout shift
                   >
                     <ul className="divide-y divide-purple-100">
                       {theme.tasks.map((task) => {
@@ -374,6 +382,7 @@ const ThemePage: React.FC = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.3 }}
+                            layout // Smooth task animations
                           >
                             <div className="flex-1">
                               <p className={`${completed ? 'text-green-700 line-through' : 'text-gray-700'}`}>
@@ -381,7 +390,7 @@ const ThemePage: React.FC = () => {
                               </p>
                               <div className="flex items-center mt-1">
                                 <span className="text-yellow-600 flex items-center text-sm">
-                                  {/* Consistent Magic Coin Symbol */}
+                                  {/* ✅ CONSISTENT MAGIC COIN SYMBOL */}
                                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
