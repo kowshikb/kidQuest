@@ -57,14 +57,14 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
         </AnimatePresence>
       </motion.div>
 
-      {/* Tooltip - positioned to stay within screen bounds */}
+      {/* Tooltip - positioned below the coin counter */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            className="absolute bottom-full mb-2 right-0 z-50"
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="absolute top-full mt-2 right-0 z-50"
+            initial={{ opacity: 0, scale: 0.8, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            exit={{ opacity: 0, scale: 0.8, y: -10 }}
             transition={{ duration: 0.2, ease: "backOut" }}
           >
             <div className="bg-purple-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap">
@@ -72,9 +72,9 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
               <div className="text-purple-200 text-xs">
                 Complete quests to earn more!
               </div>
-              {/* Tooltip arrow positioned for right alignment */}
-              <div className="absolute top-full right-4">
-                <div className="border-4 border-transparent border-t-purple-900"></div>
+              {/* Tooltip arrow positioned at the top for below positioning */}
+              <div className="absolute bottom-full right-4">
+                <div className="border-4 border-transparent border-b-purple-900"></div>
               </div>
             </div>
           </motion.div>
