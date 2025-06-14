@@ -30,24 +30,8 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
     }
   };
 
-  // Tooltip variants
-  const tooltipVariants = {
-    hidden: { 
-      opacity: 0, 
-      scale: 0.8, 
-      y: 10,
-      transition: { duration: 0.2 }
-    },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
-      y: 0,
-      transition: { duration: 0.2, ease: "backOut" }
-    }
-  };
-
   return (
-    <div className="relative coin-counter">
+    <div className="relative">
       <motion.div
         ref={counterRef}
         className="flex items-center bg-yellow-400 text-purple-900 px-3 py-1 rounded-full font-bold shadow-md cursor-help"
@@ -73,23 +57,23 @@ const CoinCounter: React.FC<CoinCounterProps> = ({ coins }) => {
         </AnimatePresence>
       </motion.div>
 
-      {/* Tooltip */}
+      {/* Tooltip - positioned to stay within screen bounds */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 z-50"
-            variants={tooltipVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
+            className="absolute bottom-full mb-2 right-0 z-50"
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ duration: 0.2, ease: "backOut" }}
           >
             <div className="bg-purple-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap">
               <div className="font-medium">Your Magic Coins</div>
               <div className="text-purple-200 text-xs">
                 Complete quests to earn more!
               </div>
-              {/* Tooltip arrow */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+              {/* Tooltip arrow positioned for right alignment */}
+              <div className="absolute top-full right-4">
                 <div className="border-4 border-transparent border-t-purple-900"></div>
               </div>
             </div>

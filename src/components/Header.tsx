@@ -141,20 +141,25 @@ const Header: React.FC = () => {
                   <LogOut size={20} />
                 </button>
 
-                {/* Coin Counter */}
-                {userProfile && <CoinCounter coins={userProfile.coins} />}
+                {/* Coin Counter - Always show, even with 0 coins */}
+                <div className="coin-counter">
+                  <CoinCounter coins={userProfile?.coins || 0} />
+                </div>
               </>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
-            {currentUser && userProfile && (
+            {currentUser && (
               <>
-                <CoinCounter coins={userProfile.coins} />
+                {/* Mobile Coin Counter */}
+                <div className="coin-counter mr-3">
+                  <CoinCounter coins={userProfile?.coins || 0} />
+                </div>
                 <button
                   onClick={toggleMenu}
-                  className="p-2 ml-3 rounded-full text-white hover:bg-white hover:bg-opacity-10"
+                  className="p-2 rounded-full text-white hover:bg-white hover:bg-opacity-10"
                 >
                   <div className="w-6 h-5 flex flex-col justify-between">
                     <span
