@@ -198,15 +198,15 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <AuthProvider>
-          <SoundProvider>
-            <ModalProvider>
+        <SoundProvider>
+          <ModalProvider>
+            <AuthProvider>
               <ThemeProvider>
                 <AppContent />
               </ThemeProvider>
-            </ModalProvider>
-          </SoundProvider>
-        </AuthProvider>
+            </AuthProvider>
+          </ModalProvider>
+        </SoundProvider>
       </Router>
     </ErrorBoundary>
   );
