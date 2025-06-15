@@ -11,7 +11,7 @@
   --color-success: 34, 197, 94;
   --color-warning: 250, 204, 21;
   --color-error: 239, 68, 68;
-  --mascot-size: 120px;
+  --mascot-size: 80px; /* ✅ REDUCED from 120px to 80px */
 }
 
 html,
@@ -151,7 +151,7 @@ h6 {
   }
 }
 
-/* Mascot container */
+/* Mascot container - ✅ SMALLER SIZE */
 .mascot-container {
   position: fixed;
   bottom: 20px;

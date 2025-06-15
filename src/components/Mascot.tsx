@@ -31,8 +31,7 @@ const MASCOT_MESSAGES = {
     "Did you know? Every challenge you complete makes you stronger!",
     "Try inviting a friend to learn together!",
     "Remember to celebrate small victories along your journey!",
-    "The more quests you complete, the more magic you unlock!",
-    ""
+    "The more quests you complete, the more magic you unlock!"
   ]
 };
 
@@ -88,25 +87,25 @@ const Mascot: React.FC = () => {
       <AnimatePresence>
         {isMessageVisible && (
           <motion.div
-            className="absolute bottom-full mb-3 p-4 bg-white rounded-2xl shadow-lg max-w-xs right-0"
+            className="absolute bottom-full mb-3 p-3 bg-white rounded-2xl shadow-lg max-w-xs right-0"
             initial={{ opacity: 0, scale: 0.8, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 10 }}
             style={{ 
               transformOrigin: 'bottom right',
-              border: '3px solid #8B5CF6'
+              border: '2px solid #8B5CF6'
             }}
           >
             <div 
-              className="absolute bottom-[-12px] right-6 w-4 h-4 bg-white rotate-45"
-              style={{ border: '0 solid transparent', borderRight: '3px solid #8B5CF6', borderBottom: '3px solid #8B5CF6' }}
+              className="absolute bottom-[-8px] right-4 w-3 h-3 bg-white rotate-45"
+              style={{ border: '0 solid transparent', borderRight: '2px solid #8B5CF6', borderBottom: '2px solid #8B5CF6' }}
             ></div>
-            <p className="text-purple-800 text-sm">{getCurrentMessage()}</p>
+            <p className="text-purple-800 text-xs">{getCurrentMessage()}</p>
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Mascot character */}
+      {/* Cute Dog Mascot */}
       <motion.div
         className="cursor-pointer"
         onClick={handleMascotClick}
@@ -114,13 +113,13 @@ const Mascot: React.FC = () => {
         whileTap={{ scale: 0.95 }}
       >
         <motion.div
-          className="relative bg-purple-600 rounded-full overflow-hidden shadow-lg border-4 border-yellow-300 w-24 h-24 flex items-center justify-center"
+          className="relative bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full overflow-hidden shadow-lg border-3 border-yellow-300 w-16 h-16 flex items-center justify-center"
           animate={
-            state === 'idle' ? { y: [0, -5, 0] } :
-            state === 'happy' ? { rotate: [-5, 5, -5, 5, 0] } :
-            state === 'excited' ? { scale: [1, 1.2, 1] } :
-            state === 'thinking' ? { x: [0, 3, -3, 0] } :
-            state === 'speaking' ? { y: [0, -3, 0, -3, 0] } :
+            state === 'idle' ? { y: [0, -3, 0] } :
+            state === 'happy' ? { rotate: [-3, 3, -3, 3, 0] } :
+            state === 'excited' ? { scale: [1, 1.1, 1] } :
+            state === 'thinking' ? { x: [0, 2, -2, 0] } :
+            state === 'speaking' ? { y: [0, -2, 0, -2, 0] } :
             {}
           }
           transition={{ 
@@ -130,12 +129,30 @@ const Mascot: React.FC = () => {
             ease: "easeInOut" 
           }}
         >
-          {/* Mascot face - using simple shapes for a cute character */}
+          {/* Cute Dog Face */}
           <div className="relative flex flex-col items-center">
-            {/* Eyes */}
-            <div className="flex space-x-5 mb-1">
+            {/* Dog Ears */}
+            <div className="absolute -top-2 flex space-x-4">
               <motion.div 
-                className="w-4 h-4 bg-white rounded-full flex items-center justify-center"
+                className="w-3 h-4 bg-purple-700 rounded-full transform -rotate-12"
+                animate={
+                  state === 'happy' || state === 'excited' ? { rotate: [-25, -5, -25] } : {}
+                }
+                transition={{ duration: 0.3 }}
+              />
+              <motion.div 
+                className="w-3 h-4 bg-purple-700 rounded-full transform rotate-12"
+                animate={
+                  state === 'happy' || state === 'excited' ? { rotate: [25, 5, 25] } : {}
+                }
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+
+            {/* Dog Eyes */}
+            <div className="flex space-x-3 mb-1 mt-1">
+              <motion.div 
+                className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center"
                 animate={
                   state === 'thinking' ? { scaleY: [1, 0.3, 1] } :
                   state === 'excited' ? { scale: [1, 1.2, 1] } :
@@ -143,10 +160,10 @@ const Mascot: React.FC = () => {
                 }
                 transition={{ duration: 0.5, repeat: state === 'thinking' ? 3 : 0 }}
               >
-                <div className="w-2 h-2 bg-black rounded-full"></div>
+                <div className="w-1 h-1 bg-black rounded-full"></div>
               </motion.div>
               <motion.div 
-                className="w-4 h-4 bg-white rounded-full flex items-center justify-center"
+                className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center"
                 animate={
                   state === 'thinking' ? { scaleY: [1, 0.3, 1] } :
                   state === 'excited' ? { scale: [1, 1.2, 1] } :
@@ -154,23 +171,71 @@ const Mascot: React.FC = () => {
                 }
                 transition={{ duration: 0.5, repeat: state === 'thinking' ? 3 : 0 }}
               >
-                <div className="w-2 h-2 bg-black rounded-full"></div>
+                <div className="w-1 h-1 bg-black rounded-full"></div>
               </motion.div>
             </div>
             
-            {/* Mouth */}
+            {/* Dog Nose */}
+            <div className="w-1.5 h-1 bg-pink-400 rounded-full mb-1"></div>
+            
+            {/* Dog Mouth */}
             <motion.div 
-              className="w-8 h-4 bg-white rounded-full overflow-hidden"
+              className="w-4 h-2 bg-white rounded-full overflow-hidden"
               animate={
-                state === 'happy' || state === 'excited' ? { height: 8, y: 2 } :
-                state === 'speaking' ? { scaleY: [1, 1.5, 1], y: 2 } :
+                state === 'happy' || state === 'excited' ? { height: 6, y: 1 } :
+                state === 'speaking' ? { scaleY: [1, 1.3, 1], y: 1 } :
                 {}
               }
               transition={{ duration: 0.3 }}
             >
               <div className="w-full h-1/2 bg-pink-400 rounded-b-full"></div>
             </motion.div>
+
+            {/* Dog Tongue (when happy/excited) */}
+            <AnimatePresence>
+              {(state === 'happy' || state === 'excited') && (
+                <motion.div
+                  className="w-1 h-2 bg-pink-500 rounded-full mt-0.5"
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: 1, scaleY: 1 }}
+                  exit={{ opacity: 0, scaleY: 0 }}
+                  transition={{ duration: 0.2 }}
+                />
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* Sparkle effect when excited */}
+          <AnimatePresence>
+            {state === 'excited' && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-1 h-1 bg-yellow-300 rounded-full"
+                    style={{
+                      top: `${20 + i * 15}%`,
+                      left: `${20 + i * 20}%`,
+                    }}
+                    animate={{
+                      scale: [0, 1, 0],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      delay: i * 0.1,
+                      repeat: 2,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </div>
