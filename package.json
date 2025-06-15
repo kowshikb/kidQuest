@@ -23,6 +23,9 @@
     "test:api": "node scripts/testApiEndpoints.js",
     "test:data": "node scripts/validateDataStructure.js",
     "check-setup": "node scripts/checkSetup.js",
+    "test-connection": "node scripts/testConnection.js",
+    "populate-minimal": "node scripts/minimalPopulate.js",
+    "populate-optimized": "node scripts/optimizedPopulate.js",
     "populate-data": "node scripts/simplePopulate.js",
     "populate-game-data": "node scripts/populateGameData.js"
   },
