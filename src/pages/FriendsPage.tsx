@@ -433,34 +433,61 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // Remove friend with mutual removal
+  // ✅ FIXED: Mutual friend removal - removes friendship from both users
   const handleRemoveFriend = async (friendId: string, friendUsername: string) => {
     try {
       playSound('click');
       
       showModal({
         title: "Remove Friend",
-        message: `Are you sure you want to remove ${friendUsername} from your champion alliance?`,
+        message: `Are you sure you want to remove ${friendUsername} from your champion alliance? This will remove the friendship for both of you.`,
         type: "warning",
         confirmText: "Remove",
         cancelText: "Cancel",
         onConfirm: async () => {
-          // Remove from current user's friends list
-          await removeFriend(friendId);
-          
-          // Note: Mutual removal from friend's list should be handled by server-side logic
-          // to avoid permission issues. For now, only remove from current user's list.
-          
-          // Update local state
-          setFriends(friends.filter(f => f.id !== friendId));
-          
-          playSound('success');
-          
-          showModal({
-            title: "Friend Removed",
-            message: `${friendUsername} has been removed from your alliance.`,
-            type: "success"
-          });
+          try {
+            // ✅ STEP 1: Remove friend from current user's friends list
+            await removeFriend(friendId);
+            
+            // ✅ STEP 2: Remove current user from friend's friends list (mutual removal)
+            const friendRef = doc(db, `${getBasePath()}/users/${friendId}`);
+            const friendSnap = await getDoc(friendRef);
+            
+            if (friendSnap.exists() && currentUser) {
+              const friendData = friendSnap.data();
+              const updatedFriendsList = (friendData.friendsList || []).filter(
+                (id: string) => id !== currentUser.uid
+              );
+              
+              // Update friend's friends list to remove current user
+              await updateDoc(friendRef, {
+                friendsList: updatedFriendsList
+              });
+            }
+            
+            // ✅ STEP 3: Update local state to reflect the change immediately
+            setFriends(friends.filter(f => f.id !== friendId));
+            
+            playSound('success');
+            
+            showModal({
+              title: "Friendship Removed",
+              message: `${friendUsername} has been removed from your alliance. The friendship has been removed for both of you.`,
+              type: "success"
+            });
+            
+          } catch (mutualRemovalError) {
+            console.error("Error in mutual friend removal:", mutualRemovalError);
+            
+            // Even if mutual removal fails, the current user's list was updated
+            setFriends(friends.filter(f => f.id !== friendId));
+            
+            showModal({
+              title: "Partial Removal",
+              message: `${friendUsername} has been removed from your friends list. There may have been an issue removing you from their list, but your friendship status has been updated.`,
+              type: "warning"
+            });
+          }
         }
       });
     } catch (error) {
