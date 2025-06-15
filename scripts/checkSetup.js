@@ -1,6 +1,10 @@
 // Script to check if everything is set up correctly
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log("🔍 Checking KidQuest Champions setup...");
 console.log("");
@@ -87,4 +91,4 @@ console.log("   - Click 'Generate new private key'");
 console.log("   - Save as scripts/serviceAccountKey.json");
 console.log("");
 console.log("4. Run the population script:");
-console.log("   node scripts/simplePopulate.js");
+console.log("   npm run populate-data");

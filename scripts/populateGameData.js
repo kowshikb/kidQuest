@@ -1,14 +1,31 @@
 // Comprehensive database population script for KidQuest Champions
 // This script creates all required collections and populates them with initial data
 
-const admin = require("firebase-admin");
-const path = require("path");
+import admin from 'firebase-admin';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Firebase Admin SDK
-const serviceAccount = require("./serviceAccountKey.json");
+let serviceAccount;
+try {
+  const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+  const serviceAccountData = fs.readFileSync(serviceAccountPath, 'utf8');
+  serviceAccount = JSON.parse(serviceAccountData);
+} catch (error) {
+  console.error("❌ Service account key not found at scripts/serviceAccountKey.json");
+  console.log("\n📋 Setup Instructions:");
+  console.log("1. Go to Firebase Console → Project Settings → Service Accounts");
+  console.log("2. Click 'Generate new private key'");
+  console.log("3. Save as scripts/serviceAccountKey.json");
+  process.exit(1);
+}
 
 // Get the project ID from environment variables or use a default
-const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || "kidquest-champions-dev";
+const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || "kidquest-champions";
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),

@@ -1,15 +1,23 @@
 // Simplified database population script that works with existing setup
-const admin = require("firebase-admin");
+import admin from 'firebase-admin';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Try to get project ID from environment or use default
-const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || "kidquest-champions-dev";
+const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || "kidquest-champions";
 
 console.log(`🔧 Attempting to populate database for project: ${PROJECT_ID}`);
 
 // Check if service account key exists
 let serviceAccount;
 try {
-  serviceAccount = require("./serviceAccountKey.json");
+  const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+  const serviceAccountData = fs.readFileSync(serviceAccountPath, 'utf8');
+  serviceAccount = JSON.parse(serviceAccountData);
   console.log("✅ Service account key found");
 } catch (error) {
   console.error("❌ Service account key not found at scripts/serviceAccountKey.json");
