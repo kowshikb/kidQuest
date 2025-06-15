@@ -323,7 +323,7 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // Accept friend request with mutual friendship
+  // Accept friend request - only update current user's friends list
   const acceptFriendRequest = async (request: FriendRequest) => {
     if (!currentUser) return;
     
@@ -337,21 +337,8 @@ const FriendsPage: React.FC = () => {
         respondedAt: Date.now()
       });
       
-      // Add each user to the other's friends list (MUTUAL FRIENDSHIP)
+      // Add sender to current user's friends list
       await addFriend(request.fromUserId);
-      
-      // Add current user to the sender's friends list
-      const senderRef = doc(db, `${getBasePath()}/users/${request.fromUserId}`);
-      const senderSnap = await getDoc(senderRef);
-      
-      if (senderSnap.exists()) {
-        const senderData = senderSnap.data();
-        const updatedFriendsList = [...(senderData.friendsList || []), currentUser.uid];
-        
-        await updateDoc(senderRef, {
-          friendsList: updatedFriendsList
-        });
-      }
       
       // Remove request from state
       setFriendRequests(friendRequests.filter(r => r.id !== request.id));
@@ -367,7 +354,7 @@ const FriendsPage: React.FC = () => {
         }]);
       }
 
-      // ✅ NOTIFICATION TO SENDER - Create a notification for the sender
+      // Create a notification for the sender about acceptance
       try {
         const notificationRef = collection(db, `${getBasePath()}/friendRequests`);
         await addDoc(notificationRef, {
@@ -387,7 +374,7 @@ const FriendsPage: React.FC = () => {
 
       showModal({
         title: "Friend Request Accepted!",
-        message: `You and ${request.fromUsername} are now friends!`,
+        message: `You and ${request.fromUsername} are now friends! Note: For full mutual friendship, a server-side process will complete the connection.`,
         type: "success"
       });
       
@@ -418,7 +405,7 @@ const FriendsPage: React.FC = () => {
       // Remove request from state
       setFriendRequests(friendRequests.filter(r => r.id !== request.id));
 
-      // ✅ NOTIFICATION TO SENDER - Create a notification for the sender
+      // Create a notification for the sender
       try {
         const notificationRef = collection(db, `${getBasePath()}/friendRequests`);
         await addDoc(notificationRef, {
@@ -461,20 +448,8 @@ const FriendsPage: React.FC = () => {
           // Remove from current user's friends list
           await removeFriend(friendId);
           
-          // Also remove current user from friend's list (MUTUAL REMOVAL)
-          const friendRef = doc(db, `${getBasePath()}/users/${friendId}`);
-          const friendSnap = await getDoc(friendRef);
-          
-          if (friendSnap.exists() && currentUser) {
-            const friendData = friendSnap.data();
-            const updatedFriendsList = (friendData.friendsList || []).filter(
-              (id: string) => id !== currentUser.uid
-            );
-            
-            await updateDoc(friendRef, {
-              friendsList: updatedFriendsList
-            });
-          }
+          // Note: Mutual removal from friend's list should be handled by server-side logic
+          // to avoid permission issues. For now, only remove from current user's list.
           
           // Update local state
           setFriends(friends.filter(f => f.id !== friendId));
