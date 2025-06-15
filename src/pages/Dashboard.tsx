@@ -328,8 +328,10 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="mt-2 text-center">
               <p className="text-xs text-purple-600 font-medium">
-                {/* ✅ FIXED MATH: Show correct percentage */}
-                {levelInfo.progressPercentage.toFixed(1)}% progress to next level
+                {/* ✅ FIXED TEXT: Show either current level progress OR remaining to next level */}
+                {levelInfo.progressPercentage.toFixed(1)}% in current level
+                <span className="text-gray-400 mx-2">•</span>
+                {(100 - levelInfo.progressPercentage).toFixed(1)}% left to next level
               </p>
             </div>
           </motion.div>

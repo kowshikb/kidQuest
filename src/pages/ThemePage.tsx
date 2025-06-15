@@ -302,12 +302,7 @@ const ThemePage: React.FC = () => {
       )}
 
       {/* ✅ COMPLETELY FIXED - Themes List with absolutely stable layout */}
-      <motion.div
-        className="space-y-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
+      <div className="space-y-6">
         {filteredThemes.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
@@ -318,40 +313,39 @@ const ThemePage: React.FC = () => {
           </div>
         ) : (
           filteredThemes.map((theme: Theme, themeIndex: number) => (
-            <motion.div
+            <div
               key={theme.id}
               className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.4, 
-                delay: themeIndex * 0.1,
-                ease: "easeOut" 
-              }}
               style={{
-                // ✅ CRITICAL FIX: Force stable positioning to prevent movement
+                // ✅ CRITICAL FIX: Completely stable positioning system
                 position: 'relative',
                 zIndex: 1,
-                isolation: 'isolate'
+                isolation: 'isolate',
+                // ✅ PREVENT ANY LAYOUT SHIFTS
+                contain: 'layout style',
+                willChange: 'auto'
               }}
             >
-              {/* Theme Header - Fixed height to prevent jumping */}
+              {/* Theme Header - Absolutely fixed height to prevent any movement */}
               <div
                 className={`p-6 cursor-pointer transition-colors duration-300 ${
                   expandedThemeId === theme.id ? 'bg-purple-50' : 'hover:bg-purple-25'
                 }`}
                 onClick={() => toggleTheme(theme.id)}
                 style={{
-                  // ✅ PREVENT LAYOUT SHIFT: Fixed minimum height
-                  minHeight: '120px',
+                  // ✅ PREVENT LAYOUT SHIFT: Absolutely fixed dimensions
+                  height: '120px',
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  // ✅ FORCE STABLE POSITIONING
+                  position: 'relative',
+                  contain: 'layout'
                 }}
               >
                 <div className="flex justify-between items-center w-full">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-bold text-purple-900 mb-1">{theme.name}</h2>
-                    <p className="text-purple-600">{theme.description}</p>
+                  <div className="flex-1 pr-4">
+                    <h2 className="text-xl font-bold text-purple-900 mb-1 line-clamp-1">{theme.name}</h2>
+                    <p className="text-purple-600 line-clamp-2">{theme.description}</p>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -368,6 +362,14 @@ const ThemePage: React.FC = () => {
                       className="text-purple-400 ml-2"
                       animate={{ rotate: expandedThemeId === theme.id ? 180 : 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
+                      style={{
+                        // ✅ PREVENT ICON FROM AFFECTING LAYOUT
+                        width: '20px',
+                        height: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
                     >
                       <ChevronDown size={20} />
                     </motion.span>
@@ -375,123 +377,106 @@ const ThemePage: React.FC = () => {
                 </div>
               </div>
               
-              {/* ✅ COMPLETELY FIXED - Task expansion with zero layout impact */}
+              {/* ✅ COMPLETELY FIXED - Task expansion with ZERO layout impact */}
               <AnimatePresence mode="wait">
                 {expandedThemeId === theme.id && (
                   <motion.div
                     initial={{ 
                       height: 0, 
-                      opacity: 0,
-                      overflow: 'hidden'
+                      opacity: 0
                     }}
                     animate={{ 
                       height: 'auto', 
-                      opacity: 1,
-                      overflow: 'visible'
+                      opacity: 1
                     }}
                     exit={{ 
                       height: 0, 
-                      opacity: 0,
-                      overflow: 'hidden'
+                      opacity: 0
                     }}
                     transition={{ 
                       duration: 0.4, 
                       ease: [0.25, 0.46, 0.45, 0.94],
                       opacity: { duration: 0.2 }
                     }}
-                    className="border-t-2 border-purple-100"
+                    className="border-t-2 border-purple-100 overflow-hidden"
                     style={{
-                      // ✅ CRITICAL: Prevent any layout impact on parent elements
+                      // ✅ CRITICAL: Absolutely prevent any layout impact
                       position: 'relative',
                       zIndex: 2,
                       isolation: 'isolate',
-                      willChange: 'height, opacity'
+                      contain: 'layout style'
                     }}
                   >
-                    {/* ✅ STABLE TASK CONTAINER */}
-                    <div 
-                      className="bg-white"
-                      style={{
-                        // ✅ PREVENT CONTENT JUMPING
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <ul className="divide-y divide-purple-100">
-                        {theme.tasks.map((task, taskIndex) => {
-                          const completed = isTaskCompleted(task.id);
-                          return (
-                            <motion.li
-                              key={task.id}
-                              className={`p-4 flex items-center transition-colors duration-200 ${
-                                completed ? 'bg-green-50' : 'hover:bg-purple-25'
-                              }`}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ 
-                                duration: 0.3, 
-                                delay: taskIndex * 0.05,
-                                ease: "easeOut"
+                    {/* ✅ STABLE TASK CONTAINER with fixed structure */}
+                    <div className="bg-white">
+                      {theme.tasks.map((task, taskIndex) => {
+                        const completed = isTaskCompleted(task.id);
+                        return (
+                          <div
+                            key={task.id}
+                            className={`p-4 flex items-center transition-colors duration-200 ${
+                              completed ? 'bg-green-50' : 'hover:bg-purple-25'
+                            } ${taskIndex !== theme.tasks.length - 1 ? 'border-b border-purple-100' : ''}`}
+                            style={{
+                              // ✅ STABLE TASK POSITIONING - Fixed height prevents jumping
+                              minHeight: '80px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              position: 'relative'
+                            }}
+                          >
+                            <div className="flex-1 pr-4">
+                              <p className={`${completed ? 'text-green-700 line-through' : 'text-gray-700'} mb-1`}>
+                                {task.description}
+                              </p>
+                              <div className="flex items-center">
+                                <span className="text-yellow-600 flex items-center text-sm">
+                                  {/* ✅ CONSISTENT MAGIC COIN SYMBOL */}
+                                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
+                                  </svg>
+                                  {task.coinReward} coins
+                                </span>
+                              </div>
+                            </div>
+                            <motion.button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                completeTask(task, theme.id);
                               }}
+                              disabled={completed}
+                              className={`transition-all duration-200 flex-shrink-0 ${
+                                completed
+                                  ? 'bg-green-100 text-green-600 cursor-default'
+                                  : 'bg-purple-100 text-purple-600 hover:bg-purple-200 hover:scale-110'
+                              }`}
+                              whileHover={completed ? {} : { scale: 1.1 }}
+                              whileTap={completed ? {} : { scale: 0.95 }}
                               style={{
-                                // ✅ STABLE TASK POSITIONING
-                                position: 'relative',
-                                minHeight: '80px',
+                                // ✅ PREVENT BUTTON FROM AFFECTING LAYOUT
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
                                 display: 'flex',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: 'none'
                               }}
                             >
-                              <div className="flex-1">
-                                <p className={`${completed ? 'text-green-700 line-through' : 'text-gray-700'}`}>
-                                  {task.description}
-                                </p>
-                                <div className="flex items-center mt-1">
-                                  <span className="text-yellow-600 flex items-center text-sm">
-                                    {/* ✅ CONSISTENT MAGIC COIN SYMBOL */}
-                                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
-                                    </svg>
-                                    {task.coinReward} coins
-                                  </span>
-                                </div>
-                              </div>
-                              <motion.button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  completeTask(task, theme.id);
-                                }}
-                                disabled={completed}
-                                className={`p-2 rounded-full transition-all duration-200 flex-shrink-0 ${
-                                  completed
-                                    ? 'bg-green-100 text-green-600 cursor-default'
-                                    : 'bg-purple-100 text-purple-600 hover:bg-purple-200 hover:scale-110'
-                                }`}
-                                whileHover={completed ? {} : { scale: 1.1 }}
-                                whileTap={completed ? {} : { scale: 0.95 }}
-                                style={{
-                                  // ✅ PREVENT BUTTON FROM AFFECTING LAYOUT
-                                  width: '40px',
-                                  height: '40px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <Check size={20} />
-                              </motion.button>
-                            </motion.li>
-                          );
-                        })}
-                      </ul>
+                              <Check size={20} />
+                            </motion.button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           ))
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };
