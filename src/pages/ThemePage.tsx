@@ -7,7 +7,7 @@ import { useSound } from '../contexts/SoundContext';
 import { useModal } from '../contexts/ModalContext';
 
 const ThemePage: React.FC = () => {
-  const { filteredThemes, filterThemes, activeFilters, fetchThemes } = useTheme() as any;
+  const { filteredThemes, filterThemes, activeFilters, loading } = useTheme();
   const { userProfile, addCompletedTask, currentUser } = useAuth();
   const { playSound } = useSound();
   const { showModal } = useModal();
@@ -15,21 +15,17 @@ const ThemePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
-  // Fetch themes when user is authenticated
-  useEffect(() => {
-    if (currentUser && fetchThemes) {
-      fetchThemes(currentUser);
-    }
-  }, [currentUser, fetchThemes]);
-
   // Define categories and difficulties for filtering
   const categories = [
     'All',
+    'Math',
+    'Science', 
+    'Language',
+    'Art',
+    'Social-Emotional',
     'Life Skills',
     'Academics',
-    'Social-Emotional',
     'Creative Arts',
-    'Science',
     'Community',
     'Health'
   ];
@@ -301,290 +297,163 @@ const ThemePage: React.FC = () => {
         </motion.div>
       )}
 
-      {/* ✅ COMPLETELY FIXED - Themes List with ZERO movement */}
-      <div 
-        className="space-y-6"
-        style={{
-          // ✅ CRITICAL: Force stable container
-          position: 'relative',
-          isolation: 'isolate',
-          contain: 'layout style'
-        }}
-      >
-        {filteredThemes.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
-              <Search size={32} className="text-purple-600" />
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-purple-600">Loading magical quests...</p>
+        </div>
+      )}
+
+      {/* Themes List */}
+      {!loading && (
+        <div className="space-y-6">
+          {filteredThemes.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
+                <Search size={32} className="text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold text-purple-900 mb-2">No Quests Found</h3>
+              <p className="text-purple-600">Try adjusting your search or filters</p>
             </div>
-            <h3 className="text-xl font-bold text-purple-900 mb-2">No Quests Found</h3>
-            <p className="text-purple-600">Try adjusting your search or filters</p>
-          </div>
-        ) : (
-          filteredThemes.map((theme: Theme, themeIndex: number) => (
-            <div
-              key={theme.id}
-              className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100"
-              style={{
-                // ✅ BULLETPROOF STABILITY: Each theme card is completely isolated
-                position: 'relative',
-                zIndex: 1,
-                isolation: 'isolate',
-                contain: 'layout style size',
-                willChange: 'auto',
-                // ✅ PREVENT ANY FLEX/GRID INTERFERENCE
-                display: 'block',
-                width: '100%'
-              }}
-            >
-              {/* ✅ COMPLETELY STABLE THEME HEADER */}
-              <div
-                className={`p-6 cursor-pointer transition-colors duration-300 ${
-                  expandedThemeId === theme.id ? 'bg-purple-50' : 'hover:bg-purple-25'
-                }`}
-                onClick={() => toggleTheme(theme.id)}
-                style={{
-                  // ✅ ABSOLUTE STABILITY: Fixed height prevents ANY movement
-                  height: '140px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  position: 'relative',
-                  contain: 'layout style',
-                  // ✅ FORCE STABLE POSITIONING
-                  boxSizing: 'border-box',
-                  overflow: 'hidden'
-                }}
+          ) : (
+            filteredThemes.map((theme: Theme, themeIndex: number) => (
+              <motion.div
+                key={theme.id}
+                className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: themeIndex * 0.1, duration: 0.5 }}
               >
-                <div 
-                  className="flex justify-between items-center w-full"
+                {/* Theme Header */}
+                <div
+                  className={`p-6 cursor-pointer transition-colors duration-300 ${
+                    expandedThemeId === theme.id ? 'bg-purple-50' : 'hover:bg-purple-25'
+                  }`}
+                  onClick={() => toggleTheme(theme.id)}
                   style={{
-                    // ✅ PREVENT CONTENT FROM AFFECTING LAYOUT
-                    height: '100%',
-                    alignItems: 'center'
+                    minHeight: '120px',
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
-                  <div 
-                    className="flex-1 pr-4"
-                    style={{
-                      // ✅ STABLE TEXT CONTAINER
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      height: '100%',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <h2 
-                      className="text-xl font-bold text-purple-900 mb-2"
-                      style={{
-                        // ✅ PREVENT TEXT OVERFLOW FROM AFFECTING LAYOUT
-                        lineHeight: '1.2',
-                        maxHeight: '2.4em',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {theme.name}
-                    </h2>
-                    <p 
-                      className="text-purple-600"
-                      style={{
-                        // ✅ STABLE DESCRIPTION
-                        lineHeight: '1.4',
-                        maxHeight: '2.8em',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical'
-                      }}
-                    >
-                      {theme.description}
-                    </p>
-                  </div>
-                  
-                  <div 
-                    className="flex items-center space-x-2 flex-shrink-0"
-                    style={{
-                      // ✅ STABLE BADGE CONTAINER
-                      height: '100%',
-                      alignItems: 'center',
-                      minWidth: 'fit-content'
-                    }}
-                  >
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      theme.difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
-                      theme.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {theme.difficulty}
-                    </span>
-                    <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                      {theme.category}
-                    </span>
-                    <div
-                      style={{
-                        // ✅ ABSOLUTELY STABLE CHEVRON CONTAINER
-                        width: '24px',
-                        height: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginLeft: '8px'
-                      }}
-                    >
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex-1 pr-4">
+                      <h2 className="text-xl font-bold text-purple-900 mb-2">
+                        {theme.name}
+                      </h2>
+                      <p className="text-purple-600 mb-3">
+                        {theme.description}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          theme.difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
+                          theme.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {theme.difficulty}
+                        </span>
+                        <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                          {theme.category}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {theme.tasks.length} tasks
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-shrink-0">
                       <motion.div
                         animate={{ rotate: expandedThemeId === theme.id ? 180 : 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        style={{
-                          // ✅ PREVENT ROTATION FROM AFFECTING LAYOUT
-                          width: '20px',
-                          height: '20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#A855F7'
-                        }}
+                        className="w-6 h-6 flex items-center justify-center text-purple-400"
                       >
                         <ChevronDown size={20} />
                       </motion.div>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* ✅ COMPLETELY ISOLATED TASK EXPANSION */}
-              <AnimatePresence mode="wait">
-                {expandedThemeId === theme.id && (
-                  <motion.div
-                    initial={{ 
-                      height: 0, 
-                      opacity: 0
-                    }}
-                    animate={{ 
-                      height: 'auto', 
-                      opacity: 1
-                    }}
-                    exit={{ 
-                      height: 0, 
-                      opacity: 0
-                    }}
-                    transition={{ 
-                      duration: 0.4, 
-                      ease: [0.25, 0.46, 0.45, 0.94],
-                      opacity: { duration: 0.2 }
-                    }}
-                    className="border-t-2 border-purple-100 overflow-hidden"
-                    style={{
-                      // ✅ ABSOLUTELY PREVENT LAYOUT IMPACT
-                      position: 'relative',
-                      zIndex: 2,
-                      isolation: 'isolate',
-                      contain: 'layout style size',
-                      // ✅ FORCE STABLE POSITIONING
-                      width: '100%',
-                      boxSizing: 'border-box'
-                    }}
-                  >
-                    {/* ✅ STABLE TASK CONTAINER */}
-                    <div 
-                      className="bg-white"
-                      style={{
-                        // ✅ PREVENT TASK CONTAINER FROM AFFECTING PARENT LAYOUT
-                        position: 'relative',
-                        width: '100%'
-                      }}
+                
+                {/* Tasks List */}
+                <AnimatePresence mode="wait">
+                  {expandedThemeId === theme.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      className="border-t-2 border-purple-100 overflow-hidden"
                     >
-                      {theme.tasks.map((task, taskIndex) => {
-                        const completed = isTaskCompleted(task.id);
-                        return (
-                          <div
-                            key={task.id}
-                            className={`p-4 flex items-center transition-colors duration-200 ${
-                              completed ? 'bg-green-50' : 'hover:bg-purple-25'
-                            } ${taskIndex !== theme.tasks.length - 1 ? 'border-b border-purple-100' : ''}`}
-                            style={{
-                              // ✅ ABSOLUTELY STABLE TASK POSITIONING
-                              minHeight: '80px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              position: 'relative',
-                              width: '100%',
-                              boxSizing: 'border-box'
-                            }}
-                          >
-                            <div 
-                              className="flex-1 pr-4"
-                              style={{
-                                // ✅ STABLE TASK CONTENT
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                minHeight: '48px'
-                              }}
+                      <div className="bg-white">
+                        {theme.tasks.map((task, taskIndex) => {
+                          const completed = isTaskCompleted(task.id);
+                          return (
+                            <div
+                              key={task.id}
+                              className={`p-4 flex items-center transition-colors duration-200 ${
+                                completed ? 'bg-green-50' : 'hover:bg-purple-25'
+                              } ${taskIndex !== theme.tasks.length - 1 ? 'border-b border-purple-100' : ''}`}
+                              style={{ minHeight: '80px' }}
                             >
-                              <p 
-                                className={`${completed ? 'text-green-700 line-through' : 'text-gray-700'} mb-1`}
+                              <div className="flex-1 pr-4">
+                                <h4 className={`font-medium mb-1 ${
+                                  completed ? 'text-green-700 line-through' : 'text-gray-800'
+                                }`}>
+                                  {task.title}
+                                </h4>
+                                <p className={`text-sm mb-2 ${
+                                  completed ? 'text-green-600 line-through' : 'text-gray-600'
+                                }`}>
+                                  {task.description}
+                                </p>
+                                <div className="flex items-center">
+                                  <span className="text-yellow-600 flex items-center text-sm">
+                                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
+                                    </svg>
+                                    {task.coinReward} coins
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <motion.button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  completeTask(task, theme.id);
+                                }}
+                                disabled={completed}
+                                className={`transition-all duration-200 flex-shrink-0 ${
+                                  completed
+                                    ? 'bg-green-100 text-green-600 cursor-default'
+                                    : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                                }`}
+                                whileHover={completed ? {} : { scale: 1.1 }}
+                                whileTap={completed ? {} : { scale: 0.95 }}
                                 style={{
-                                  // ✅ PREVENT TEXT FROM AFFECTING LAYOUT
-                                  lineHeight: '1.4',
-                                  wordWrap: 'break-word'
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: 'none',
                                 }}
                               >
-                                {task.description}
-                              </p>
-                              <div className="flex items-center">
-                                <span className="text-yellow-600 flex items-center text-sm">
-                                  {/* ✅ CONSISTENT MAGIC COIN SYMBOL */}
-                                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
-                                  </svg>
-                                  {task.coinReward} coins
-                                </span>
-                              </div>
+                                <Check size={20} />
+                              </motion.button>
                             </div>
-                            
-                            <motion.button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                completeTask(task, theme.id);
-                              }}
-                              disabled={completed}
-                              className={`transition-all duration-200 flex-shrink-0 ${
-                                completed
-                                  ? 'bg-green-100 text-green-600 cursor-default'
-                                  : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
-                              }`}
-                              whileHover={completed ? {} : { scale: 1.1 }}
-                              whileTap={completed ? {} : { scale: 0.95 }}
-                              style={{
-                                // ✅ ABSOLUTELY STABLE BUTTON
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: 'none',
-                                // ✅ PREVENT BUTTON FROM AFFECTING LAYOUT
-                                flexShrink: 0,
-                                position: 'relative'
-                              }}
-                            >
-                              <Check size={20} />
-                            </motion.button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))
-        )}
-      </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };
