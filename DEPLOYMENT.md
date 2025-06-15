@@ -15,7 +15,8 @@ This guide will help you deploy KidQuest Champions to Firebase Cloud Platform.
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Click "Create a project" or select existing project
-3. Enable the following services:
+3. **Important**: Note your exact Project ID (e.g., `kidquest-champions-12345`)
+4. Enable the following services:
    - **Authentication** (Email/Password, Phone, Anonymous)
    - **Firestore Database** (in production mode)
    - **Storage** (in production mode)
@@ -42,13 +43,15 @@ This guide will help you deploy KidQuest Champions to Firebase Cloud Platform.
 
    ```env
    VITE_FIREBASE_API_KEY=AIzaSy...
-   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
    VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+   VITE_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
    VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
    VITE_FIREBASE_APP_ID=1:123456789:web:abc123
    VITE_FIREBASE_MEASUREMENT_ID=G-ABC123DEF
    ```
+
+   **CRITICAL**: Ensure `VITE_FIREBASE_PROJECT_ID` matches your exact Firebase Project ID.
 
 3. Update `src/firebase/config.ts` with your configuration (if not using environment variables)
 
@@ -85,7 +88,20 @@ Configuration choices:
 - **Single Page App**: Yes
 - **GitHub Actions**: No (or Yes if you want CI/CD)
 
-### 7. Deploy to Firebase
+### 7. Deploy Database Setup
+
+Before deploying the app, set up your database:
+
+```bash
+# Deploy Firestore rules and indexes
+npm run deploy:rules
+npm run deploy:indexes
+
+# Seed the database with initial data
+npm run seed-db
+```
+
+### 8. Deploy to Firebase
 
 #### Option A: Full Deployment
 
@@ -105,7 +121,7 @@ npm run deploy:hosting
 npm run deploy:rules
 ```
 
-### 8. Configure Authentication
+### 9. Configure Authentication
 
 In Firebase Console → Authentication:
 
@@ -119,7 +135,7 @@ In Firebase Console → Authentication:
    - Add your custom domain if applicable
    - Firebase subdomain is already authorized
 
-### 9. Configure Firestore Security Rules
+### 10. Configure Firestore Security Rules
 
 The rules are already created in `firestore.rules`. Deploy them:
 
@@ -127,7 +143,7 @@ The rules are already created in `firestore.rules`. Deploy them:
 firebase deploy --only firestore:rules
 ```
 
-### 10. Configure Storage Rules
+### 11. Configure Storage Rules
 
 The storage rules are in `storage.rules`. Deploy them:
 
@@ -171,6 +187,7 @@ npm run deploy
 - [ ] Test file uploads (avatars)
 - [ ] Verify Firebase Analytics (if enabled)
 - [ ] Check console for any errors
+- [ ] Verify data appears correctly (themes, rooms, etc.)
 
 ## Custom Domain (Optional)
 
@@ -219,8 +236,21 @@ npm install @sentry/react @sentry/tracing
 
    - Ensure variables start with `VITE_`
    - Restart development server after adding variables
+   - Verify project ID matches exactly
 
-4. **Deployment Fails**:
+4. **Permission Denied Errors**:
+
+   - Check that `VITE_FIREBASE_PROJECT_ID` matches your Firebase Project ID exactly
+   - Re-run database seeding: `npm run seed-db`
+   - Deploy Firestore rules: `npm run deploy:rules`
+
+5. **Data Not Loading**:
+
+   - Verify project ID consistency in `.env` and Firebase Console
+   - Check Firestore Database in Firebase Console for data under `/artifacts/{your-project-id}/public/data/`
+   - Ensure indexes are built (may take a few minutes)
+
+6. **Deployment Fails**:
    ```bash
    firebase deploy --debug
    ```
@@ -263,3 +293,5 @@ firebase emulators:start --only firestore
 🎉 **Congratulations!** Your KidQuest Champions app should now be live on Firebase!
 
 Access your app at: `https://your-project-id.web.app`
+
+**Important**: Make sure your project ID is consistent across all configuration files to avoid permission errors.

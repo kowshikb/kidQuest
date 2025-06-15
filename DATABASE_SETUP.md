@@ -19,21 +19,27 @@
 npm install firebase-admin
 ```
 
-## Step 3: Configure the Seeding Script
+## Step 3: Configure Your Environment
 
-1. Open `scripts/seedDatabase.js`
-2. Update these variables:
+1. Copy `env.example` to `.env`:
 
-   ```javascript
-   const serviceAccount = require("./serviceAccountKey.json");
-
-   admin.initializeApp({
-     credential: admin.credential.cert(serviceAccount),
-     databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com", // Replace with your project URL
-   });
-
-   const APP_ID = "your-app-id"; // Replace with your app ID from vite.config.ts
+   ```bash
+   cp env.example .env
    ```
+
+2. Update `.env` with your Firebase configuration:
+
+   ```env
+   VITE_FIREBASE_API_KEY=your_api_key_here
+   VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   ```
+
+   **CRITICAL**: Make sure `VITE_FIREBASE_PROJECT_ID` matches your actual Firebase Project ID exactly.
 
 ## Step 4: Deploy Firestore Rules and Indexes
 
@@ -50,6 +56,8 @@ npm run deploy-db
 
 ## Step 5: Seed the Database
 
+The seeding script will automatically use your `VITE_FIREBASE_PROJECT_ID` from the `.env` file:
+
 ```bash
 npm run seed-db
 ```
@@ -58,47 +66,47 @@ This will create the following collections and documents:
 
 ### Collections Created:
 
-1. **`/artifacts/{appId}/public/data/users/`**
+1. **`/artifacts/{projectId}/public/data/users/`**
 
    - User profiles with friendly IDs
    - Coins, completed tasks, friends lists
    - Location data for leaderboard filtering
 
-2. **`/artifacts/{appId}/public/data/themes/`**
+2. **`/artifacts/{projectId}/public/data/themes/`**
 
    - 4 educational themes (Math, Science, Language, Art)
    - Each with multiple tasks and rewards
    - Quiz questions and interactive content
 
-3. **`/artifacts/{appId}/public/data/rooms/`**
+3. **`/artifacts/{projectId}/public/data/rooms/`**
 
    - 3 challenge rooms for multiplayer games
    - Different categories and difficulties
    - Real-time participant tracking
 
-4. **`/artifacts/{appId}/public/data/systemConfig/`**
+4. **`/artifacts/{projectId}/public/data/systemConfig/`**
 
    - Feature flags (friends, rooms, leaderboard, coins)
    - System settings (max friends, room sizes, etc.)
 
-5. **`/artifacts/{appId}/public/data/gameStats/`**
+5. **`/artifacts/{projectId}/public/data/gameStats/`**
 
    - Global statistics tracking
    - User counts, coins earned, tasks completed
 
-6. **`/artifacts/{appId}/public/data/leaderboards/`**
+6. **`/artifacts/{projectId}/public/data/leaderboards/`**
 
    - Global, daily, weekly, monthly leaderboards
    - Initially empty, populated as users play
 
-7. **`/artifacts/{appId}/public/data/friendRequests/`**
+7. **`/artifacts/{projectId}/public/data/friendRequests/`**
    - Friend connection requests
    - Status tracking (pending/accepted/rejected)
 
 ## Step 6: Verify Database Setup
 
 1. Go to Firebase Console → Firestore Database
-2. You should see the collections created with sample data
+2. You should see the collections created with sample data under `/artifacts/{your-project-id}/public/data/`
 3. Check that indexes are being built (may take a few minutes)
 
 ## Step 7: Test the Application
@@ -114,7 +122,7 @@ This will create the following collections and documents:
 ## Database Structure Overview
 
 ```
-/artifacts/{appId}/public/data/
+/artifacts/{projectId}/public/data/
 ├── users/               # User profiles and progress
 ├── themes/              # Educational content and quests
 ├── rooms/               # Multiplayer challenge rooms
@@ -162,10 +170,12 @@ firebase firestore:export gs://your-bucket/backups/$(date +%Y%m%d)
 
 ### Common Issues:
 
-1. **Permission Denied**
+1. **Permission Denied / Missing Data**
 
+   - **Most Common Cause**: Project ID mismatch between frontend and seeding script
+   - **Solution**: Ensure `VITE_FIREBASE_PROJECT_ID` in `.env` matches your actual Firebase Project ID
+   - Re-run the seeding script after fixing the project ID
    - Check that Firestore rules are deployed
-   - Verify user authentication is working
 
 2. **Missing Indexes**
 
@@ -176,12 +186,12 @@ firebase firestore:export gs://your-bucket/backups/$(date +%Y%m%d)
 
    - Verify service account key path
    - Check Firebase project URL and permissions
-   - Ensure APP_ID matches your configuration
+   - Ensure `VITE_FIREBASE_PROJECT_ID` is set correctly in `.env`
 
 4. **Data Not Appearing**
    - Check browser console for errors
    - Verify Firebase configuration in `src/firebase/config.ts`
-   - Confirm APP_ID matches in both frontend and seeding script
+   - Confirm project ID consistency across all configuration files
 
 ### Debug Mode
 

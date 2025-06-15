@@ -8,13 +8,16 @@ const path = require("path");
 // You'll need to download your service account key from Firebase Console
 const serviceAccount = require("./serviceAccountKey.json"); // Download this from Firebase Console
 
+// Get the project ID from environment variables or use a default
+const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || "kidquest-champions-dev";
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://kidquest-champions.firebaseio.com", // Updated with your project URL
+  databaseURL: `https://${PROJECT_ID}-default-rtdb.firebaseio.com/`, // Updated to use PROJECT_ID
 });
 
 const db = admin.firestore();
-const APP_ID = "kidquest-champions-dev"; // Matches your frontend APP_ID
+const APP_ID = PROJECT_ID; // Use the same PROJECT_ID as APP_ID for consistency
 const BASE_PATH = `/artifacts/${APP_ID}/public/data`;
 
 // Helper function to get collection reference
@@ -377,6 +380,7 @@ async function seedLeaderboards() {
 // Main seeding function
 async function seedDatabase() {
   console.log("🌱 Starting database seeding...");
+  console.log(`📍 Project ID: ${PROJECT_ID}`);
   console.log(`📍 Base path: ${BASE_PATH}`);
 
   try {
