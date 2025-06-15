@@ -11,7 +11,7 @@
   --color-success: 34, 197, 94;
   --color-warning: 250, 204, 21;
   --color-error: 239, 68, 68;
-  --mascot-size: 64px; /* ✅ REDUCED from 80px to 64px for smaller, more elegant size */
+  --mascot-size: 64px; /* ✅ PERFECT SIZE - Small but visible */
 }
 
 html,
@@ -151,7 +151,7 @@ h6 {
   }
 }
 
-/* ✅ SMALLER MASCOT CONTAINER - More elegant positioning */
+/* ✅ PERFECT MASCOT CONTAINER - Completely transparent and optimally sized */
 .mascot-container {
   position: fixed;
   bottom: 20px;
@@ -159,8 +159,13 @@ h6 {
   width: var(--mascot-size);
   height: var(--mascot-size);
   z-index: 50;
-  /* ✅ ENSURE TRANSPARENCY */
+  /* ✅ COMPLETELY TRANSPARENT - No background whatsoever */
   background: transparent;
+  /* ✅ ENSURE NO VISUAL ARTIFACTS */
+  border: none;
+  outline: none;
+  /* ✅ PREVENT ANY LAYOUT INTERFERENCE */
+  pointer-events: auto;
 }
 
 /* Task completion animation */
