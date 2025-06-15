@@ -10,6 +10,7 @@ import {
   VolumeX,
   Volume2,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSound } from "../contexts/SoundContext";
@@ -27,7 +28,8 @@ const Header: React.FC = () => {
   // Define navigation items
   const navItems = [
     { path: "/dashboard", label: "Home", icon: <Home size={20} /> },
-    { path: "/themes", label: "Quests", icon: <Award size={20} /> },
+    { path: "/quests", label: "Quests", icon: <Sparkles size={20} /> },
+    { path: "/themes", label: "Legacy", icon: <Award size={20} /> },
     { path: "/rooms", label: "Rooms", icon: <MessageSquare size={20} /> },
     { path: "/friends", label: "Friends", icon: <Users size={20} /> },
     { path: "/leaderboard", label: "Leaderboard", icon: <Award size={20} /> },

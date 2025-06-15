@@ -13,6 +13,7 @@ import { ModalProvider } from "./contexts/ModalContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ThemePage from "./pages/ThemePage";
+import QuestsPage from "./pages/QuestsPage";
 import RoomsPage from "./pages/RoomsPage";
 import RoomDetail from "./pages/RoomDetail";
 import FriendsPage from "./pages/FriendsPage";
@@ -38,7 +39,6 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log technical details to console only
     console.error("🚨 KidQuest Champions Error:", error);
     console.error("📍 Error Info:", errorInfo);
     console.error("🔍 Stack Trace:", error.stack);
@@ -130,6 +130,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <ThemePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quests"
+              element={
+                <ProtectedRoute>
+                  <QuestsPage />
                 </ProtectedRoute>
               }
             />
