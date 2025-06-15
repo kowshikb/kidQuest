@@ -7,7 +7,7 @@ interface SoundContextType {
   playSound: (sound: SoundType) => void;
 }
 
-type SoundType = 'click' | 'success' | 'error' | 'coin' | 'complete' | 'challenge';
+type SoundType = 'click' | 'success' | 'error' | 'coin' | 'complete' | 'challenge' | 'mascot';
 
 const SOUND_URLS = {
   click: 'https://assets.mixkit.co/sfx/preview/mixkit-light-button-2580.mp3',
@@ -15,7 +15,9 @@ const SOUND_URLS = {
   error: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3',
   coin: 'https://assets.mixkit.co/sfx/preview/mixkit-coin-win-notification-1992.mp3',
   complete: 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
-  challenge: 'https://assets.mixkit.co/sfx/preview/mixkit-magical-discover-notification-2293.mp3'
+  challenge: 'https://assets.mixkit.co/sfx/preview/mixkit-magical-discover-notification-2293.mp3',
+  // ✅ NEW: Funny dog sound that kids will love!
+  mascot: 'https://assets.mixkit.co/sfx/preview/mixkit-cartoon-dog-barks-2951.mp3'
 };
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
@@ -73,6 +75,12 @@ export const SoundProvider: React.FC<SoundProviderProps> = ({ children }) => {
     soundEnabled: isSoundEnabled,
     preload: true 
   });
+  // ✅ NEW: Funny mascot sound that kids will love!
+  const [playMascotSound] = useSoundLib(SOUND_URLS.mascot, { 
+    volume: 0.7, // Slightly louder for fun effect
+    soundEnabled: isSoundEnabled,
+    preload: true 
+  });
 
   const toggleSound = () => {
     const newState = !isSoundEnabled;
@@ -112,6 +120,10 @@ export const SoundProvider: React.FC<SoundProviderProps> = ({ children }) => {
           break;
         case 'challenge':
           playChallengeSound();
+          break;
+        case 'mascot':
+          // ✅ NEW: Play funny dog sound that kids will love!
+          playMascotSound();
           break;
         default:
           console.warn(`Unknown sound type: ${sound}`);

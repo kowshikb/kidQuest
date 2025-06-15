@@ -13,7 +13,7 @@ const MASCOT_MESSAGES = {
     "I'm your magical guide!"
   ],
   happy: [
-    "Great job, explorer!",
+    "Great job, champion!",
     "You're doing amazing!",
     "That was fantastic!"
   ],
@@ -31,7 +31,9 @@ const MASCOT_MESSAGES = {
     "Did you know? Every challenge you complete makes you stronger!",
     "Try inviting a friend to learn together!",
     "Remember to celebrate small victories along your journey!",
-    "The more quests you complete, the more magic you unlock!"
+    "The more quests you complete, the more magic you unlock!",
+    "Woof! I'm your loyal companion on this adventure!",
+    "Bark bark! Let's have some fun learning together!"
   ]
 };
 
@@ -60,7 +62,8 @@ const Mascot: React.FC = () => {
 
   // Handle click on mascot
   const handleMascotClick = () => {
-    playSound('click');
+    // ✅ NEW: Play funny dog sound that kids will love!
+    playSound('mascot');
     
     if (isMessageVisible) {
       setIsMessageVisible(false);

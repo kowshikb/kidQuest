@@ -11,7 +11,7 @@
   --color-success: 34, 197, 94;
   --color-warning: 250, 204, 21;
   --color-error: 239, 68, 68;
-  --mascot-size: 64px; /* ✅ PERFECT SIZE - Small but visible */
+  --mascot-size: 64px;
 }
 
 html,
@@ -159,12 +159,9 @@ h6 {
   width: var(--mascot-size);
   height: var(--mascot-size);
   z-index: 50;
-  /* ✅ COMPLETELY TRANSPARENT - No background whatsoever */
   background: transparent;
-  /* ✅ ENSURE NO VISUAL ARTIFACTS */
   border: none;
   outline: none;
-  /* ✅ PREVENT ANY LAYOUT INTERFERENCE */
   pointer-events: auto;
 }
 
