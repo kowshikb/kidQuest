@@ -24,35 +24,7 @@ const Dashboard: React.FC = () => {
   const { themes, loading: themesLoading, fetchThemes } = useTheme() as any;
   const { playSound } = useSound();
   const navigate = useNavigate();
-  const [greeting, setGreeting] = useState("");
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [themesLoaded, setThemesLoaded] = useState(false);
-
-  // Update time every minute for dynamic greeting
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Create time-based greeting with more personality
-  useEffect(() => {
-    const hour = new Date().getHours();
-    let newGreeting = "";
-
-    if (hour < 6) {
-      newGreeting = "🌙 Late Night Champion";
-    } else if (hour < 12) {
-      newGreeting = "🌅 Good Morning";
-    } else if (hour < 17) {
-      newGreeting = "☀️ Good Afternoon";
-    } else if (hour < 21) {
-      newGreeting = "🌆 Good Evening";
-    } else {
-      newGreeting = "✨ Night Owl";
-    }
-
-    setGreeting(newGreeting);
-  }, [currentTime]);
 
   // Fetch themes when user is authenticated and track loading state
   useEffect(() => {
@@ -269,7 +241,7 @@ const Dashboard: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {greeting}, {userProfile?.username || "Champion"}!
+            Hi Champion, {userProfile?.username || "Champion"}!
           </motion.h1>
           
           <motion.p
