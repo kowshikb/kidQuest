@@ -87,7 +87,7 @@ const Mascot: React.FC = () => {
       <AnimatePresence>
         {isMessageVisible && (
           <motion.div
-            className="absolute bottom-full mb-3 p-3 bg-white rounded-2xl shadow-lg max-w-xs right-0"
+            className="absolute bottom-full mb-2 p-2 bg-white rounded-xl shadow-lg max-w-xs right-0"
             initial={{ opacity: 0, scale: 0.8, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -97,7 +97,7 @@ const Mascot: React.FC = () => {
             }}
           >
             <div 
-              className="absolute bottom-[-8px] right-4 w-3 h-3 bg-white rotate-45"
+              className="absolute bottom-[-6px] right-3 w-2 h-2 bg-white rotate-45"
               style={{ border: '0 solid transparent', borderRight: '2px solid #8B5CF6', borderBottom: '2px solid #8B5CF6' }}
             ></div>
             <p className="text-purple-800 text-xs">{getCurrentMessage()}</p>
@@ -105,21 +105,22 @@ const Mascot: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Cute Dog Mascot */}
+      {/* ✅ COMPLETELY NEW: Transparent, Cute Dog Mascot */}
       <motion.div
-        className="cursor-pointer"
+        className="cursor-pointer relative"
         onClick={handleMascotClick}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
       >
+        {/* ✅ TRANSPARENT BACKGROUND with subtle glow */}
         <motion.div
-          className="relative bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full overflow-hidden shadow-lg border-3 border-yellow-300 w-16 h-16 flex items-center justify-center"
+          className="relative w-16 h-16 flex items-center justify-center"
           animate={
-            state === 'idle' ? { y: [0, -3, 0] } :
-            state === 'happy' ? { rotate: [-3, 3, -3, 3, 0] } :
-            state === 'excited' ? { scale: [1, 1.1, 1] } :
-            state === 'thinking' ? { x: [0, 2, -2, 0] } :
-            state === 'speaking' ? { y: [0, -2, 0, -2, 0] } :
+            state === 'idle' ? { y: [0, -2, 0] } :
+            state === 'happy' ? { rotate: [-2, 2, -2, 2, 0] } :
+            state === 'excited' ? { scale: [1, 1.15, 1] } :
+            state === 'thinking' ? { x: [0, 1, -1, 0] } :
+            state === 'speaking' ? { y: [0, -1, 0, -1, 0] } :
             {}
           }
           transition={{ 
@@ -128,74 +129,138 @@ const Mascot: React.FC = () => {
             repeatType: "reverse",
             ease: "easeInOut" 
           }}
+          style={{
+            // ✅ TRANSPARENT with subtle purple glow
+            background: 'transparent',
+            filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.3))',
+          }}
         >
-          {/* Cute Dog Face */}
-          <div className="relative flex flex-col items-center">
+          {/* ✅ CUTE DOG DESIGN - SVG for crisp, scalable graphics */}
+          <svg 
+            width="64" 
+            height="64" 
+            viewBox="0 0 64 64" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            className="drop-shadow-lg"
+          >
+            {/* Dog Body */}
+            <ellipse 
+              cx="32" 
+              cy="42" 
+              rx="18" 
+              ry="16" 
+              fill="url(#dogBodyGradient)"
+              stroke="#7C3AED"
+              strokeWidth="2"
+            />
+            
+            {/* Dog Head */}
+            <circle 
+              cx="32" 
+              cy="24" 
+              r="14" 
+              fill="url(#dogHeadGradient)"
+              stroke="#7C3AED"
+              strokeWidth="2"
+            />
+            
             {/* Dog Ears */}
-            <div className="absolute -top-2 flex space-x-4">
-              <motion.div 
-                className="w-3 h-4 bg-purple-700 rounded-full transform -rotate-12"
-                animate={
-                  state === 'happy' || state === 'excited' ? { rotate: [-25, -5, -25] } : {}
-                }
-                transition={{ duration: 0.3 }}
-              />
-              <motion.div 
-                className="w-3 h-4 bg-purple-700 rounded-full transform rotate-12"
-                animate={
-                  state === 'happy' || state === 'excited' ? { rotate: [25, 5, 25] } : {}
-                }
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-
-            {/* Dog Eyes */}
-            <div className="flex space-x-3 mb-1 mt-1">
-              <motion.div 
-                className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center"
-                animate={
-                  state === 'thinking' ? { scaleY: [1, 0.3, 1] } :
-                  state === 'excited' ? { scale: [1, 1.2, 1] } :
-                  {}
-                }
-                transition={{ duration: 0.5, repeat: state === 'thinking' ? 3 : 0 }}
-              >
-                <div className="w-1 h-1 bg-black rounded-full"></div>
-              </motion.div>
-              <motion.div 
-                className="w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center"
-                animate={
-                  state === 'thinking' ? { scaleY: [1, 0.3, 1] } :
-                  state === 'excited' ? { scale: [1, 1.2, 1] } :
-                  {}
-                }
-                transition={{ duration: 0.5, repeat: state === 'thinking' ? 3 : 0 }}
-              >
-                <div className="w-1 h-1 bg-black rounded-full"></div>
-              </motion.div>
-            </div>
-            
-            {/* Dog Nose */}
-            <div className="w-1.5 h-1 bg-pink-400 rounded-full mb-1"></div>
-            
-            {/* Dog Mouth */}
-            <motion.div 
-              className="w-4 h-2 bg-white rounded-full overflow-hidden"
+            <motion.ellipse 
+              cx="22" 
+              cy="18" 
+              rx="6" 
+              ry="10" 
+              fill="url(#dogEarGradient)"
+              stroke="#7C3AED"
+              strokeWidth="1.5"
               animate={
-                state === 'happy' || state === 'excited' ? { height: 6, y: 1 } :
-                state === 'speaking' ? { scaleY: [1, 1.3, 1], y: 1 } :
+                state === 'happy' || state === 'excited' ? 
+                { rotate: [-10, 10, -10] } : 
                 {}
               }
               transition={{ duration: 0.3 }}
-            >
-              <div className="w-full h-1/2 bg-pink-400 rounded-b-full"></div>
-            </motion.div>
-
+              style={{ transformOrigin: '22px 28px' }}
+            />
+            <motion.ellipse 
+              cx="42" 
+              cy="18" 
+              rx="6" 
+              ry="10" 
+              fill="url(#dogEarGradient)"
+              stroke="#7C3AED"
+              strokeWidth="1.5"
+              animate={
+                state === 'happy' || state === 'excited' ? 
+                { rotate: [10, -10, 10] } : 
+                {}
+              }
+              transition={{ duration: 0.3 }}
+              style={{ transformOrigin: '42px 28px' }}
+            />
+            
+            {/* Dog Eyes */}
+            <motion.circle 
+              cx="27" 
+              cy="22" 
+              r="3" 
+              fill="#FFFFFF"
+              stroke="#7C3AED"
+              strokeWidth="1"
+              animate={
+                state === 'thinking' ? { scaleY: [1, 0.3, 1] } :
+                state === 'excited' ? { scale: [1, 1.2, 1] } :
+                {}
+              }
+              transition={{ duration: 0.5, repeat: state === 'thinking' ? 3 : 0 }}
+            />
+            <circle cx="27" cy="22" r="1.5" fill="#1F2937" />
+            
+            <motion.circle 
+              cx="37" 
+              cy="22" 
+              r="3" 
+              fill="#FFFFFF"
+              stroke="#7C3AED"
+              strokeWidth="1"
+              animate={
+                state === 'thinking' ? { scaleY: [1, 0.3, 1] } :
+                state === 'excited' ? { scale: [1, 1.2, 1] } :
+                {}
+              }
+              transition={{ duration: 0.5, repeat: state === 'thinking' ? 3 : 0 }}
+            />
+            <circle cx="37" cy="22" r="1.5" fill="#1F2937" />
+            
+            {/* Dog Nose */}
+            <ellipse cx="32" cy="26" rx="2" ry="1.5" fill="#EC4899" />
+            
+            {/* Dog Mouth */}
+            <motion.path 
+              d="M 28 30 Q 32 34 36 30"
+              stroke="#7C3AED"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+              animate={
+                state === 'happy' || state === 'excited' ? 
+                { d: "M 26 30 Q 32 36 38 30" } :
+                state === 'speaking' ? 
+                { d: ["M 28 30 Q 32 34 36 30", "M 28 32 Q 32 36 36 32", "M 28 30 Q 32 34 36 30"] } :
+                {}
+              }
+              transition={{ duration: 0.3 }}
+            />
+            
             {/* Dog Tongue (when happy/excited) */}
             <AnimatePresence>
               {(state === 'happy' || state === 'excited') && (
-                <motion.div
-                  className="w-1 h-2 bg-pink-500 rounded-full mt-0.5"
+                <motion.ellipse
+                  cx="32"
+                  cy="35"
+                  rx="2"
+                  ry="4"
+                  fill="#F472B6"
                   initial={{ opacity: 0, scaleY: 0 }}
                   animate={{ opacity: 1, scaleY: 1 }}
                   exit={{ opacity: 0, scaleY: 0 }}
@@ -203,39 +268,73 @@ const Mascot: React.FC = () => {
                 />
               )}
             </AnimatePresence>
-          </div>
-
-          {/* Sparkle effect when excited */}
-          <AnimatePresence>
-            {state === 'excited' && (
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-yellow-300 rounded-full"
-                    style={{
-                      top: `${20 + i * 15}%`,
-                      left: `${20 + i * 20}%`,
-                    }}
-                    animate={{
-                      scale: [0, 1, 0],
-                      opacity: [0, 1, 0],
-                    }}
-                    transition={{
-                      duration: 0.6,
-                      delay: i * 0.1,
-                      repeat: 2,
-                    }}
+            
+            {/* Dog Tail */}
+            <motion.path 
+              d="M 48 45 Q 55 40 52 50"
+              stroke="#7C3AED"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+              animate={
+                state === 'happy' || state === 'excited' ? 
+                { d: ["M 48 45 Q 55 40 52 50", "M 48 45 Q 58 35 55 45", "M 48 45 Q 55 40 52 50"] } :
+                {}
+              }
+              transition={{ duration: 0.4, repeat: (state === 'happy' || state === 'excited') ? Infinity : 0 }}
+            />
+            
+            {/* Sparkle effects when excited */}
+            <AnimatePresence>
+              {state === 'excited' && (
+                <>
+                  <motion.circle
+                    cx="18"
+                    cy="15"
+                    r="1"
+                    fill="#FDE047"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                    transition={{ duration: 0.6, repeat: 3, delay: 0 }}
                   />
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <motion.circle
+                    cx="46"
+                    cy="12"
+                    r="1"
+                    fill="#FDE047"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                    transition={{ duration: 0.6, repeat: 3, delay: 0.2 }}
+                  />
+                  <motion.circle
+                    cx="50"
+                    cy="25"
+                    r="1"
+                    fill="#FDE047"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                    transition={{ duration: 0.6, repeat: 3, delay: 0.4 }}
+                  />
+                </>
+              )}
+            </AnimatePresence>
+            
+            {/* Gradient Definitions */}
+            <defs>
+              <linearGradient id="dogBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#A855F7" />
+                <stop offset="100%" stopColor="#7C3AED" />
+              </linearGradient>
+              <linearGradient id="dogHeadGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#C084FC" />
+                <stop offset="100%" stopColor="#A855F7" />
+              </linearGradient>
+              <linearGradient id="dogEarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#7C3AED" />
+                <stop offset="100%" stopColor="#5B21B6" />
+              </linearGradient>
+            </defs>
+          </svg>
         </motion.div>
       </motion.div>
     </div>
