@@ -65,7 +65,7 @@ try {
 }
 
 // Get app_id from environment or use project_id as fallback
-const APP_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'kidquest-champions-dev';
+const APP_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'kidquest-champions';
 
 // Define the base path for all Firestore operations
 export const getBasePath = () => `/artifacts/${APP_ID}/public/data`;
