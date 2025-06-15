@@ -323,27 +323,41 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // Accept friend request - only update current user's friends list
+  // ✅ FIXED: Accept friend request with MUTUAL friendship creation
   const acceptFriendRequest = async (request: FriendRequest) => {
     if (!currentUser) return;
     
     try {
       playSound('success');
       
-      // Update request status and add responded timestamp
+      // ✅ STEP 1: Update request status and add responded timestamp
       const requestRef = doc(db, `${getBasePath()}/friendRequests/${request.id}`);
       await updateDoc(requestRef, {
         status: 'accepted',
         respondedAt: Date.now()
       });
       
-      // Add sender to current user's friends list
+      // ✅ STEP 2: Add sender to current user's friends list
       await addFriend(request.fromUserId);
       
-      // Remove request from state
+      // ✅ STEP 3: Add current user to sender's friends list (MUTUAL FRIENDSHIP)
+      const senderRef = doc(db, `${getBasePath()}/users/${request.fromUserId}`);
+      const senderSnap = await getDoc(senderRef);
+      
+      if (senderSnap.exists()) {
+        const senderData = senderSnap.data();
+        const updatedSenderFriendsList = [...(senderData.friendsList || []), currentUser.uid];
+        
+        // Update sender's friends list to include current user
+        await updateDoc(senderRef, {
+          friendsList: updatedSenderFriendsList
+        });
+      }
+      
+      // ✅ STEP 4: Remove request from state
       setFriendRequests(friendRequests.filter(r => r.id !== request.id));
       
-      // Add friend to local state with consistent ID format
+      // ✅ STEP 5: Add friend to local state with consistent ID format
       if (request.fromUsername && request.fromAvatarUrl) {
         setFriends([...friends, {
           id: request.fromUserId,
@@ -354,7 +368,7 @@ const FriendsPage: React.FC = () => {
         }]);
       }
 
-      // Create a notification for the sender about acceptance
+      // ✅ STEP 6: Create a notification for the sender about acceptance
       try {
         const notificationRef = collection(db, `${getBasePath()}/friendRequests`);
         await addDoc(notificationRef, {
@@ -374,7 +388,7 @@ const FriendsPage: React.FC = () => {
 
       showModal({
         title: "Friend Request Accepted!",
-        message: `You and ${request.fromUsername} are now friends! Note: For full mutual friendship, a server-side process will complete the connection.`,
+        message: `You and ${request.fromUsername} are now mutual friends! Both of you can see each other in your friends lists.`,
         type: "success"
       });
       
@@ -433,7 +447,7 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // ✅ FIXED: Mutual friend removal - removes friendship from both users
+  // ✅ FIXED: Complete mutual friend removal - removes friendship from both users
   const handleRemoveFriend = async (friendId: string, friendUsername: string) => {
     try {
       playSound('click');
@@ -449,7 +463,7 @@ const FriendsPage: React.FC = () => {
             // ✅ STEP 1: Remove friend from current user's friends list
             await removeFriend(friendId);
             
-            // ✅ STEP 2: Remove current user from friend's friends list (mutual removal)
+            // ✅ STEP 2: Remove current user from friend's friends list (MUTUAL REMOVAL)
             const friendRef = doc(db, `${getBasePath()}/users/${friendId}`);
             const friendSnap = await getDoc(friendRef);
             
