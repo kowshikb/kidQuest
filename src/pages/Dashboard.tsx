@@ -241,7 +241,7 @@ const Dashboard: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Lets do something awesome today! {userProfile?.username || "Champion"}!
+            Let's do something awesome today! {userProfile?.username || "Champion"}!
           </motion.h1>
           
           <motion.p
