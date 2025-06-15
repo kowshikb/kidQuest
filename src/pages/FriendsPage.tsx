@@ -8,7 +8,8 @@ import {
   UserMinus,
   UserCheck,
   Search,
-  MessagesSquare
+  MessagesSquare,
+  Bell
 } from 'lucide-react';
 import { 
   collection, 
@@ -22,7 +23,8 @@ import {
   onSnapshot,
   Timestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteDoc
 } from 'firebase/firestore';
 import { db, getBasePath } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,14 +36,18 @@ interface FriendRequest {
   id: string;
   fromUserId: string;
   fromUsername?: string;
+  fromFriendlyId?: string;
   fromAvatarUrl?: string;
   toUserId: string;
+  toFriendlyId?: string;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: number;
+  respondedAt?: number;
 }
 
 interface Friend {
   id: string;
+  friendlyUserId: string;
   username: string;
   avatarUrl: string;
   isOnline: boolean;
@@ -59,7 +65,7 @@ const FriendsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch friend requests
+  // Fetch friend requests with real-time updates
   useEffect(() => {
     if (!currentUser) return;
     
@@ -90,13 +96,15 @@ const FriendsPage: React.FC = () => {
                   id: docSnap.id,
                   ...requestData,
                   fromUsername: senderData.username,
+                  fromFriendlyId: senderData.friendlyUserId,
                   fromAvatarUrl: senderData.avatarUrl
                 });
               } else {
                 requests.push({
                   id: docSnap.id,
                   ...requestData,
-                  fromUsername: 'Unknown Champion'
+                  fromUsername: 'Unknown Champion',
+                  fromFriendlyId: 'Unknown'
                 });
               }
             } catch (error) {
@@ -104,7 +112,8 @@ const FriendsPage: React.FC = () => {
               requests.push({
                 id: docSnap.id,
                 ...requestData,
-                fromUsername: 'Unknown Champion'
+                fromUsername: 'Unknown Champion',
+                fromFriendlyId: 'Unknown'
               });
             }
           }
@@ -131,7 +140,7 @@ const FriendsPage: React.FC = () => {
     };
   }, [currentUser]);
 
-  // Fetch friends list
+  // Fetch friends list with real-time updates
   useEffect(() => {
     if (!currentUser || !userProfile) return;
     
@@ -162,6 +171,7 @@ const FriendsPage: React.FC = () => {
               
               friendsList.push({
                 id: friendId,
+                friendlyUserId: friendData.friendlyUserId || friendId,
                 username: friendData.username,
                 avatarUrl: friendData.avatarUrl,
                 isOnline
@@ -207,12 +217,23 @@ const FriendsPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentUser, userProfile]);
 
-  // Send friend request
+  // Send friend request using friendly ID
   const sendFriendRequest = async () => {
     if (!currentUser || !friendId.trim()) return;
     
-    // Validate friend ID
-    if (friendId.trim() === currentUser.uid) {
+    // Validate friend ID format (should be KQ followed by 6 digits)
+    const friendlyIdPattern = /^KQ\d{6}$/;
+    if (!friendlyIdPattern.test(friendId.trim())) {
+      showModal({
+        title: "Invalid Champion ID",
+        message: "Please enter a valid Champion ID (format: KQ123456)",
+        type: "warning"
+      });
+      return;
+    }
+    
+    // Check if trying to add self
+    if (friendId.trim() === userProfile?.friendlyUserId) {
       showModal({
         title: "Friend Request Error",
         message: "You can't send a friend request to yourself!",
@@ -221,24 +242,15 @@ const FriendsPage: React.FC = () => {
       return;
     }
     
-    // Check if already friends
-    if (userProfile?.friendsList?.includes(friendId.trim())) {
-      showModal({
-        title: "Already Friends",
-        message: "You're already friends with this champion!",
-        type: "info"
-      });
-      return;
-    }
-    
     try {
       playSound('click');
       
-      // Check if user exists
-      const userRef = doc(db, `${getBasePath()}/users/${friendId.trim()}`);
-      const userSnap = await getDoc(userRef);
+      // Find user by friendly ID
+      const usersRef = collection(db, `${getBasePath()}/users`);
+      const q = query(usersRef, where('friendlyUserId', '==', friendId.trim()));
+      const querySnapshot = await getDocs(q);
       
-      if (!userSnap.exists()) {
+      if (querySnapshot.empty) {
         showModal({
           title: "Champion Not Found",
           message: "We couldn't find a champion with that ID. Check the ID and try again!",
@@ -247,16 +259,30 @@ const FriendsPage: React.FC = () => {
         return;
       }
       
+      const targetUserDoc = querySnapshot.docs[0];
+      const targetUserId = targetUserDoc.id;
+      const targetUserData = targetUserDoc.data();
+      
+      // Check if already friends
+      if (userProfile?.friendsList?.includes(targetUserId)) {
+        showModal({
+          title: "Already Friends",
+          message: "You're already friends with this champion!",
+          type: "info"
+        });
+        return;
+      }
+      
       // Check if request already exists
       const requestsRef = collection(db, `${getBasePath()}/friendRequests`);
-      const q = query(
+      const existingRequestQuery = query(
         requestsRef,
         where('fromUserId', '==', currentUser.uid),
-        where('toUserId', '==', friendId.trim()),
+        where('toUserId', '==', targetUserId),
         where('status', '==', 'pending')
       );
       
-      const existingRequests = await getDocs(q);
+      const existingRequests = await getDocs(existingRequestQuery);
       
       if (!existingRequests.empty) {
         showModal({
@@ -267,10 +293,13 @@ const FriendsPage: React.FC = () => {
         return;
       }
       
-      // Create friend request
+      // Create friend request with all required fields
       await addDoc(requestsRef, {
         fromUserId: currentUser.uid,
-        toUserId: friendId.trim(),
+        fromUsername: userProfile?.username || 'Unknown Champion',
+        fromFriendlyId: userProfile?.friendlyUserId || 'Unknown',
+        toUserId: targetUserId,
+        toFriendlyId: targetUserData.friendlyUserId || friendId.trim(),
         status: 'pending',
         createdAt: Date.now()
       });
@@ -279,7 +308,7 @@ const FriendsPage: React.FC = () => {
       
       showModal({
         title: "Friend Request Sent!",
-        message: "Your friend request has been sent successfully!",
+        message: `Your friend request has been sent to ${targetUserData.username || 'the champion'} successfully!`,
         type: "success"
       });
       
@@ -294,20 +323,21 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // Accept friend request
+  // Accept friend request with mutual friendship
   const acceptFriendRequest = async (request: FriendRequest) => {
     if (!currentUser) return;
     
     try {
       playSound('success');
       
-      // Update request status
+      // Update request status and add responded timestamp
       const requestRef = doc(db, `${getBasePath()}/friendRequests/${request.id}`);
       await updateDoc(requestRef, {
-        status: 'accepted'
+        status: 'accepted',
+        respondedAt: Date.now()
       });
       
-      // Add each user to the other's friends list
+      // Add each user to the other's friends list (MUTUAL FRIENDSHIP)
       await addFriend(request.fromUserId);
       
       // Add current user to the sender's friends list
@@ -326,15 +356,41 @@ const FriendsPage: React.FC = () => {
       // Remove request from state
       setFriendRequests(friendRequests.filter(r => r.id !== request.id));
       
-      // Add friend to local state
+      // Add friend to local state with consistent ID format
       if (request.fromUsername && request.fromAvatarUrl) {
         setFriends([...friends, {
           id: request.fromUserId,
+          friendlyUserId: request.fromFriendlyId || request.fromUserId,
           username: request.fromUsername,
           avatarUrl: request.fromAvatarUrl,
           isOnline: false
         }]);
       }
+
+      // ✅ NOTIFICATION TO SENDER - Create a notification for the sender
+      try {
+        const notificationRef = collection(db, `${getBasePath()}/friendRequests`);
+        await addDoc(notificationRef, {
+          fromUserId: currentUser.uid,
+          fromUsername: userProfile?.username || 'Unknown Champion',
+          fromFriendlyId: userProfile?.friendlyUserId || 'Unknown',
+          toUserId: request.fromUserId,
+          toFriendlyId: request.fromFriendlyId || 'Unknown',
+          status: 'accepted',
+          type: 'friend_accepted',
+          createdAt: Date.now(),
+          message: `${userProfile?.username || 'A champion'} accepted your friend request!`
+        });
+      } catch (notificationError) {
+        console.warn("Could not send acceptance notification:", notificationError);
+      }
+
+      showModal({
+        title: "Friend Request Accepted!",
+        message: `You and ${request.fromUsername} are now friends!`,
+        type: "success"
+      });
+      
     } catch (error) {
       console.error("Error accepting friend request:", error);
       showModal({
@@ -345,21 +401,41 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // Reject friend request
+  // Reject friend request with notification
   const rejectFriendRequest = async (request: FriendRequest) => {
     if (!currentUser) return;
     
     try {
       playSound('click');
       
-      // Update request status
+      // Update request status and add responded timestamp
       const requestRef = doc(db, `${getBasePath()}/friendRequests/${request.id}`);
       await updateDoc(requestRef, {
-        status: 'rejected'
+        status: 'rejected',
+        respondedAt: Date.now()
       });
       
       // Remove request from state
       setFriendRequests(friendRequests.filter(r => r.id !== request.id));
+
+      // ✅ NOTIFICATION TO SENDER - Create a notification for the sender
+      try {
+        const notificationRef = collection(db, `${getBasePath()}/friendRequests`);
+        await addDoc(notificationRef, {
+          fromUserId: currentUser.uid,
+          fromUsername: userProfile?.username || 'Unknown Champion',
+          fromFriendlyId: userProfile?.friendlyUserId || 'Unknown',
+          toUserId: request.fromUserId,
+          toFriendlyId: request.fromFriendlyId || 'Unknown',
+          status: 'rejected',
+          type: 'friend_rejected',
+          createdAt: Date.now(),
+          message: `${userProfile?.username || 'A champion'} declined your friend request.`
+        });
+      } catch (notificationError) {
+        console.warn("Could not send rejection notification:", notificationError);
+      }
+      
     } catch (error) {
       console.error("Error rejecting friend request:", error);
       showModal({
@@ -370,21 +446,22 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // Remove friend
-  const handleRemoveFriend = async (friendId: string) => {
+  // Remove friend with mutual removal
+  const handleRemoveFriend = async (friendId: string, friendUsername: string) => {
     try {
       playSound('click');
       
       showModal({
         title: "Remove Friend",
-        message: "Are you sure you want to remove this champion from your alliance?",
+        message: `Are you sure you want to remove ${friendUsername} from your champion alliance?`,
         type: "warning",
         confirmText: "Remove",
         cancelText: "Cancel",
         onConfirm: async () => {
+          // Remove from current user's friends list
           await removeFriend(friendId);
           
-          // Also remove current user from friend's list
+          // Also remove current user from friend's list (MUTUAL REMOVAL)
           const friendRef = doc(db, `${getBasePath()}/users/${friendId}`);
           const friendSnap = await getDoc(friendRef);
           
@@ -403,6 +480,12 @@ const FriendsPage: React.FC = () => {
           setFriends(friends.filter(f => f.id !== friendId));
           
           playSound('success');
+          
+          showModal({
+            title: "Friend Removed",
+            message: `${friendUsername} has been removed from your alliance.`,
+            type: "success"
+          });
         }
       });
     } catch (error) {
@@ -425,29 +508,48 @@ const FriendsPage: React.FC = () => {
       // Create a new room
       const roomsRef = collection(db, `${getBasePath()}/rooms`);
       const newRoom = {
-        player1Id: currentUser.uid,
-        player2Id: null,
-        status: 'waiting',
+        name: `${userProfile?.username || 'Champion'}'s Challenge Room`,
+        description: "A friendly challenge room for learning!",
+        maxPlayers: 2,
+        currentPlayers: 1,
+        isActive: true,
+        difficulty: "Easy",
+        category: "General",
+        createdBy: currentUser.uid,
         createdAt: Date.now(),
+        participants: [
+          {
+            userId: currentUser.uid,
+            username: userProfile?.username || 'Champion',
+            avatarUrl: userProfile?.avatarUrl || '',
+            score: 0,
+            joinedAt: Date.now(),
+          },
+        ],
+        status: 'waiting',
         messages: [{
           senderId: 'system',
           text: `${userProfile?.username || 'A champion'} created this room and invited their friend.`,
           timestamp: Date.now()
         }],
-        currentChallenge: null
+        currentChallenge: null,
       };
       
       const docRef = await addDoc(roomsRef, newRoom);
       
-      // Create a notification (friendship request with special type)
+      // Create a room invitation
       const requestsRef = collection(db, `${getBasePath()}/friendRequests`);
       await addDoc(requestsRef, {
         fromUserId: currentUser.uid,
+        fromUsername: userProfile?.username || 'Unknown Champion',
+        fromFriendlyId: userProfile?.friendlyUserId || 'Unknown',
         toUserId: friendId,
+        toFriendlyId: friends.find(f => f.id === friendId)?.friendlyUserId || 'Unknown',
         status: 'pending',
         type: 'room_invitation',
         roomId: docRef.id,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        message: `${userProfile?.username || 'A champion'} invited you to join their challenge room!`
       });
       
       playSound('success');
@@ -472,7 +574,8 @@ const FriendsPage: React.FC = () => {
 
   // Filter friends by search term
   const filteredFriends = friends.filter(friend => 
-    friend.username.toLowerCase().includes(searchTerm.toLowerCase())
+    friend.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    friend.friendlyUserId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -508,9 +611,10 @@ const FriendsPage: React.FC = () => {
           <input
             type="text"
             value={friendId}
-            onChange={(e) => setFriendId(e.target.value)}
-            placeholder="Enter Champion's User ID"
+            onChange={(e) => setFriendId(e.target.value.toUpperCase())}
+            placeholder="Enter Champion ID (KQ123456)"
             className="storybook-input flex-1 rounded-r-none"
+            maxLength={8}
           />
           <button
             onClick={sendFriendRequest}
@@ -521,9 +625,9 @@ const FriendsPage: React.FC = () => {
             Add
           </button>
         </div>
-        {currentUser && (
+        {currentUser && userProfile && (
           <div className="mt-4 p-4 bg-purple-50 rounded-xl">
-            <p className="text-purple-800 text-sm">Your Champion ID: <span className="font-mono font-medium">{currentUser.uid}</span></p>
+            <p className="text-purple-800 text-sm">Your Champion ID: <span className="font-mono font-medium text-lg">{userProfile.friendlyUserId || currentUser.uid}</span></p>
             <p className="text-purple-600 text-xs mt-1">Share this with friends so they can add you!</p>
           </div>
         )}
@@ -537,7 +641,10 @@ const FriendsPage: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="text-2xl font-bold text-purple-900 mb-4">Champion Requests</h2>
+          <h2 className="text-2xl font-bold text-purple-900 mb-4 flex items-center">
+            <Bell size={24} className="mr-2 text-purple-600" />
+            Champion Requests ({friendRequests.length})
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {friendRequests.map((request) => (
               <motion.div
@@ -563,7 +670,7 @@ const FriendsPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-purple-900">{request.fromUsername}</h3>
-                    <p className="text-sm text-gray-500">Champion ID: {request.fromUserId}</p>
+                    <p className="text-sm text-gray-500">Champion ID: {request.fromFriendlyId || request.fromUserId}</p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -595,7 +702,7 @@ const FriendsPage: React.FC = () => {
         transition={{ delay: 0.4 }}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-purple-900">My Champion Alliance</h2>
+          <h2 className="text-2xl font-bold text-purple-900">My Champion Alliance ({friends.length})</h2>
           
           {/* Search */}
           {friends.length > 0 && (
@@ -660,8 +767,8 @@ const FriendsPage: React.FC = () => {
                     </div>
                     <div className="ml-4">
                       <h3 className="font-bold text-purple-900">{friend.username}</h3>
-                      <p className="text-sm text-gray-500 truncate" title={friend.id}>
-                        ID: {friend.id}
+                      <p className="text-sm text-gray-500 font-mono">
+                        {friend.friendlyUserId}
                       </p>
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs ${
                         friend.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -680,8 +787,9 @@ const FriendsPage: React.FC = () => {
                       Challenge
                     </button>
                     <button
-                      onClick={() => handleRemoveFriend(friend.id)}
+                      onClick={() => handleRemoveFriend(friend.id, friend.username)}
                       className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-300 flex items-center justify-center text-sm"
+                      title="Remove Friend"
                     >
                       <UserMinus size={16} />
                     </button>

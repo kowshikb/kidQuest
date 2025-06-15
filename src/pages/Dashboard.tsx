@@ -241,7 +241,7 @@ const Dashboard: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Let's do something awesome today! {userProfile?.username || "Champion"}!
+            Hi Champion, {userProfile?.username || "Champion"}!
           </motion.h1>
           
           <motion.p
@@ -491,7 +491,7 @@ const Dashboard: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* Quick Stats Footer */}
+        {/* Quick Stats Footer - ✅ REMOVED "Ready for Adventure" */}
         <motion.div
           className="mt-12 text-center"
           initial={{ opacity: 0 }}
@@ -508,11 +508,6 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center text-purple-700">
                 <Award size={16} className="mr-1" />
                 <span className="font-medium">Level {levelInfo.currentLevel} Champion</span>
-              </div>
-              <div className="w-1 h-1 bg-purple-400 rounded-full" />
-              <div className="flex items-center text-purple-700">
-                <Sparkles size={16} className="mr-1" />
-                <span className="font-medium">Ready for Adventure</span>
               </div>
             </div>
           </div>
