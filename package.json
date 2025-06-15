@@ -18,7 +18,13 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "firebase:init": "firebase init",
     "firebase:login": "firebase login",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "test": "node scripts/comprehensiveTestSuite.js",
+    "test:api": "node scripts/testApiEndpoints.js",
+    "test:data": "node scripts/validateDataStructure.js",
+    "check-setup": "node scripts/checkSetup.js",
+    "populate-data": "node scripts/simplePopulate.js",
+    "populate-game-data": "node scripts/populateGameData.js"
   },
   "dependencies": {
     "firebase": "^10.9.0",
