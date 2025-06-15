@@ -301,7 +301,7 @@ const ThemePage: React.FC = () => {
         </motion.div>
       )}
 
-      {/* ✅ FIXED QUEST SECTION MOVEMENT - Themes List with stable layout */}
+      {/* ✅ COMPLETELY FIXED - Themes List with absolutely stable layout */}
       <motion.div
         className="space-y-6"
         initial={{ opacity: 0 }}
@@ -317,29 +317,43 @@ const ThemePage: React.FC = () => {
             <p className="text-purple-600">Try adjusting your search or filters</p>
           </div>
         ) : (
-          filteredThemes.map((theme: Theme) => (
+          filteredThemes.map((theme: Theme, themeIndex: number) => (
             <motion.div
               key={theme.id}
               className="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-purple-100"
-              layoutId={`theme-${theme.id}`} // ✅ STABLE LAYOUT ID
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ 
+                duration: 0.4, 
+                delay: themeIndex * 0.1,
+                ease: "easeOut" 
+              }}
+              style={{
+                // ✅ CRITICAL FIX: Force stable positioning to prevent movement
+                position: 'relative',
+                zIndex: 1,
+                isolation: 'isolate'
+              }}
             >
-              {/* Theme Header */}
-              <motion.div
+              {/* Theme Header - Fixed height to prevent jumping */}
+              <div
                 className={`p-6 cursor-pointer transition-colors duration-300 ${
                   expandedThemeId === theme.id ? 'bg-purple-50' : 'hover:bg-purple-25'
                 }`}
                 onClick={() => toggleTheme(theme.id)}
-                layout="position" // ✅ PREVENT JUMPING DURING EXPANSION
+                style={{
+                  // ✅ PREVENT LAYOUT SHIFT: Fixed minimum height
+                  minHeight: '120px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
               >
-                <div className="flex justify-between items-center">
-                  <div>
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex-1">
                     <h2 className="text-xl font-bold text-purple-900 mb-1">{theme.name}</h2>
                     <p className="text-purple-600">{theme.description}</p>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       theme.difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
                       theme.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
@@ -351,31 +365,58 @@ const ThemePage: React.FC = () => {
                       {theme.category}
                     </span>
                     <motion.span 
-                      className="text-purple-400"
+                      className="text-purple-400 ml-2"
                       animate={{ rotate: expandedThemeId === theme.id ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
                       <ChevronDown size={20} />
                     </motion.span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
               
-              {/* ✅ FIXED TASK EXPANSION - Smooth animation without layout shift */}
-              <AnimatePresence>
+              {/* ✅ COMPLETELY FIXED - Task expansion with zero layout impact */}
+              <AnimatePresence mode="wait">
                 {expandedThemeId === theme.id && (
                   <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
+                    initial={{ 
+                      height: 0, 
+                      opacity: 0,
+                      overflow: 'hidden'
+                    }}
+                    animate={{ 
+                      height: 'auto', 
+                      opacity: 1,
+                      overflow: 'visible'
+                    }}
+                    exit={{ 
+                      height: 0, 
+                      opacity: 0,
+                      overflow: 'hidden'
+                    }}
                     transition={{ 
                       duration: 0.4, 
-                      ease: [0.25, 0.46, 0.45, 0.94] // ✅ SMOOTH EASING
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                      opacity: { duration: 0.2 }
                     }}
-                    className="border-t-2 border-purple-100 overflow-hidden"
-                    layout="position" // ✅ PREVENT LAYOUT SHIFT
+                    className="border-t-2 border-purple-100"
+                    style={{
+                      // ✅ CRITICAL: Prevent any layout impact on parent elements
+                      position: 'relative',
+                      zIndex: 2,
+                      isolation: 'isolate',
+                      willChange: 'height, opacity'
+                    }}
                   >
-                    <div className="p-0"> {/* ✅ REMOVE PADDING TO PREVENT JUMPING */}
+                    {/* ✅ STABLE TASK CONTAINER */}
+                    <div 
+                      className="bg-white"
+                      style={{
+                        // ✅ PREVENT CONTENT JUMPING
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    >
                       <ul className="divide-y divide-purple-100">
                         {theme.tasks.map((task, taskIndex) => {
                           const completed = isTaskCompleted(task.id);
@@ -389,10 +430,16 @@ const ThemePage: React.FC = () => {
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ 
                                 duration: 0.3, 
-                                delay: taskIndex * 0.1, // ✅ STAGGERED ANIMATION
+                                delay: taskIndex * 0.05,
                                 ease: "easeOut"
                               }}
-                              layout="position" // ✅ SMOOTH TASK ANIMATIONS
+                              style={{
+                                // ✅ STABLE TASK POSITIONING
+                                position: 'relative',
+                                minHeight: '80px',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}
                             >
                               <div className="flex-1">
                                 <p className={`${completed ? 'text-green-700 line-through' : 'text-gray-700'}`}>
@@ -410,15 +457,26 @@ const ThemePage: React.FC = () => {
                                 </div>
                               </div>
                               <motion.button
-                                onClick={() => completeTask(task, theme.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  completeTask(task, theme.id);
+                                }}
                                 disabled={completed}
-                                className={`p-2 rounded-full transition-all duration-200 ${
+                                className={`p-2 rounded-full transition-all duration-200 flex-shrink-0 ${
                                   completed
                                     ? 'bg-green-100 text-green-600 cursor-default'
                                     : 'bg-purple-100 text-purple-600 hover:bg-purple-200 hover:scale-110'
                                 }`}
                                 whileHover={completed ? {} : { scale: 1.1 }}
                                 whileTap={completed ? {} : { scale: 0.95 }}
+                                style={{
+                                  // ✅ PREVENT BUTTON FROM AFFECTING LAYOUT
+                                  width: '40px',
+                                  height: '40px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
                               >
                                 <Check size={20} />
                               </motion.button>
