@@ -39,6 +39,27 @@ service cloud.firestore {
       allow write: if false; // Only admin/cloud functions can modify themes
     }
 
+    // Hobbies collection - read-only for authenticated users
+    match /artifacts/{appId}/public/data/hobbies/{hobbyId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admin/cloud functions can modify hobbies
+    }
+
+    // Notifications collection - users can manage their own notifications
+    match /artifacts/{appId}/public/data/notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        request.auth.uid == request.query.userId
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // User progress for hobbies
+    match /artifacts/{appId}/public/data/users/{userId}/hobbyProgress/{progressId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Rooms collection - authenticated users can read and participate
     match /artifacts/{appId}/public/data/rooms/{roomId} {
       allow read: if isAuthenticated();
@@ -82,6 +103,17 @@ service cloud.firestore {
     match /artifacts/{appId}/public/data/systemConfig/{configId} {
       allow read: if isAuthenticated();
       allow write: if false; // Only admin can modify system config
+    }
+
+    // Quests collection - authenticated users can read
+    match /artifacts/{appId}/public/data/quests/{questId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admin/cloud functions can modify quests
+    }
+
+    // Quest progress collection - users can manage their own progress
+    match /artifacts/{appId}/public/data/users/{userId}/questProgress/{progressId} {
+      allow read, write: if isOwner(userId);
     }
 
     // Deny all other requests

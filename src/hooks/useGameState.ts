@@ -242,3 +242,22 @@ export const useGameState = (options: UseGameStateOptions = {}): UseGameStateRet
 };
 
 export default useGameState;
+
+  return {
+    gameState,
+    loading,
+    error,
+    lastUpdated,
+    refreshGameState,
+    syncChanges,
+    isNewUser,
+    hasCompletedTutorial,
+    currentLevel,
+    totalCoins,
+    unreadNotifications,
+    retryCount,
+    isRetrying,
+  };
+};
+
+export default useGameState;

@@ -1,5 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useSound as useSoundLib } from 'use-sound';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface SoundContextType {
   isSoundEnabled: boolean;
@@ -7,25 +12,21 @@ interface SoundContextType {
   playSound: (sound: SoundType) => void;
 }
 
-type SoundType = 'click' | 'success' | 'error' | 'coin' | 'complete' | 'challenge' | 'mascot';
-
-const SOUND_URLS = {
-  click: 'https://assets.mixkit.co/sfx/preview/mixkit-light-button-2580.mp3',
-  success: 'https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3',
-  error: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3',
-  coin: 'https://assets.mixkit.co/sfx/preview/mixkit-coin-win-notification-1992.mp3',
-  complete: 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
-  challenge: 'https://assets.mixkit.co/sfx/preview/mixkit-magical-discover-notification-2293.mp3',
-  // ✅ NEW: Funny dog sound that kids will love!
-  mascot: 'https://assets.mixkit.co/sfx/preview/mixkit-cartoon-dog-barks-2951.mp3'
-};
+type SoundType =
+  | "click"
+  | "success"
+  | "error"
+  | "coin"
+  | "complete"
+  | "challenge"
+  | "mascot";
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function useSound() {
   const context = useContext(SoundContext);
   if (!context) {
-    throw new Error('useSound must be used within a SoundProvider');
+    throw new Error("useSound must be used within a SoundProvider");
   }
   return context;
 }
@@ -36,64 +37,107 @@ interface SoundProviderProps {
 
 export const SoundProvider: React.FC<SoundProviderProps> = ({ children }) => {
   const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
-    const saved = localStorage.getItem('kidquest-sound-enabled');
+    const saved = localStorage.getItem("kidquest-sound-enabled");
     return saved !== null ? JSON.parse(saved) : true;
   });
 
   useEffect(() => {
-    localStorage.setItem('kidquest-sound-enabled', JSON.stringify(isSoundEnabled));
+    localStorage.setItem(
+      "kidquest-sound-enabled",
+      JSON.stringify(isSoundEnabled)
+    );
   }, [isSoundEnabled]);
 
-  // Initialize sound hooks with proper volume and enabled state
-  const [playClickSound] = useSoundLib(SOUND_URLS.click, { 
-    volume: 0.5, 
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
-  const [playSuccessSound] = useSoundLib(SOUND_URLS.success, { 
-    volume: 0.5, 
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
-  const [playErrorSound] = useSoundLib(SOUND_URLS.error, { 
-    volume: 0.5, 
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
-  const [playCoinSound] = useSoundLib(SOUND_URLS.coin, { 
-    volume: 0.5, 
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
-  const [playCompleteSound] = useSoundLib(SOUND_URLS.complete, { 
-    volume: 0.5, 
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
-  const [playChallengeSound] = useSoundLib(SOUND_URLS.challenge, { 
-    volume: 0.5, 
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
-  // ✅ NEW: Funny mascot sound that kids will love!
-  const [playMascotSound] = useSoundLib(SOUND_URLS.mascot, { 
-    volume: 0.7, // Slightly louder for fun effect
-    soundEnabled: isSoundEnabled,
-    preload: true 
-  });
+  // ✅ MODERN SOLUTION: Web Audio API for clean, reliable sounds
+  const createBeep = (
+    frequency: number,
+    duration: number,
+    volume: number = 0.3
+  ) => {
+    if (!isSoundEnabled) return;
+
+    try {
+      const audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = "sine";
+
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(
+        volume,
+        audioContext.currentTime + 0.01
+      );
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime + duration
+      );
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+
+      // Clean up
+      setTimeout(() => {
+        audioContext.close();
+      }, duration * 1000 + 100);
+    } catch (error) {
+      console.warn("Audio context not supported:", error);
+    }
+  };
+
+  const createChord = (
+    frequencies: number[],
+    duration: number,
+    volume: number = 0.2
+  ) => {
+    if (!isSoundEnabled) return;
+
+    try {
+      const audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+
+      frequencies.forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = freq;
+        oscillator.type = "sine";
+
+        const startTime = audioContext.currentTime + index * 0.1;
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      });
+
+      // Clean up
+      setTimeout(() => {
+        audioContext.close();
+      }, (duration + frequencies.length * 0.1) * 1000 + 100);
+    } catch (error) {
+      console.warn("Audio context not supported:", error);
+    }
+  };
 
   const toggleSound = () => {
     const newState = !isSoundEnabled;
     setIsSoundEnabled(newState);
-    
-    // Play a test sound when enabling to give immediate feedback
+
+    // Play a test sound when enabling
     if (newState) {
       setTimeout(() => {
-        try {
-          playClickSound();
-        } catch (error) {
-          console.log('Sound test failed:', error);
-        }
+        createBeep(800, 0.1, 0.2);
       }, 100);
     }
   };
@@ -103,27 +147,38 @@ export const SoundProvider: React.FC<SoundProviderProps> = ({ children }) => {
 
     try {
       switch (sound) {
-        case 'click':
-          playClickSound();
+        case "click":
+          createBeep(800, 0.1, 0.2);
           break;
-        case 'success':
-          playSuccessSound();
+        case "success":
+          // Happy ascending notes
+          createChord([523, 659, 784], 0.3, 0.25);
           break;
-        case 'error':
-          playErrorSound();
+        case "error":
+          // Descending error sound
+          createBeep(300, 0.2, 0.3);
+          setTimeout(() => createBeep(200, 0.2, 0.3), 100);
           break;
-        case 'coin':
-          playCoinSound();
+        case "coin":
+          // Classic coin pickup sound
+          createBeep(800, 0.1, 0.2);
+          setTimeout(() => createBeep(1000, 0.1, 0.2), 50);
           break;
-        case 'complete':
-          playCompleteSound();
+        case "complete":
+          // Victory fanfare
+          createChord([523, 659, 784, 1047], 0.5, 0.3);
           break;
-        case 'challenge':
-          playChallengeSound();
+        case "challenge":
+          // Magical discovery
+          createBeep(400, 0.1, 0.2);
+          setTimeout(() => createBeep(600, 0.1, 0.2), 80);
+          setTimeout(() => createBeep(800, 0.15, 0.2), 160);
           break;
-        case 'mascot':
-          // ✅ NEW: Play funny dog sound that kids will love!
-          playMascotSound();
+        case "mascot":
+          // Playful bounce sound
+          createBeep(600, 0.08, 0.2);
+          setTimeout(() => createBeep(400, 0.08, 0.2), 60);
+          setTimeout(() => createBeep(800, 0.1, 0.2), 120);
           break;
         default:
           console.warn(`Unknown sound type: ${sound}`);
@@ -136,8 +191,10 @@ export const SoundProvider: React.FC<SoundProviderProps> = ({ children }) => {
   const value = {
     isSoundEnabled,
     toggleSound,
-    playSound
+    playSound,
   };
 
-  return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;
+  return (
+    <SoundContext.Provider value={value}>{children}</SoundContext.Provider>
+  );
 };

@@ -1,20 +1,17 @@
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  startAfter,
-  onSnapshot,
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
   Timestamp,
-  writeBatch
-} from 'firebase/firestore';
-import { db, getBasePath } from '../firebase/config';
+  writeBatch,
+} from "firebase/firestore";
+import { db, getBasePath } from "../firebase/config";
 
 export interface GameState {
   user: UserGameState;
@@ -82,7 +79,7 @@ export interface Achievement {
   iconUrl: string;
   unlockedAt: Timestamp;
   category: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rarity: "common" | "rare" | "epic" | "legendary";
   progress?: number;
   maxProgress?: number;
 }
@@ -93,7 +90,7 @@ export interface Badge {
   description: string;
   iconUrl: string;
   earnedAt: Timestamp;
-  type: 'skill' | 'milestone' | 'special' | 'seasonal';
+  type: "skill" | "milestone" | "special" | "seasonal";
 }
 
 export interface UserStats {
@@ -110,8 +107,8 @@ export interface UserStats {
 export interface InventoryItem {
   id: string;
   name: string;
-  type: 'avatar' | 'theme' | 'powerup' | 'decoration';
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  type: "avatar" | "theme" | "powerup" | "decoration";
+  rarity: "common" | "rare" | "epic" | "legendary";
   quantity: number;
   acquiredAt: Timestamp;
   isEquipped?: boolean;
@@ -120,9 +117,9 @@ export interface InventoryItem {
 export interface UserPreferences {
   soundEnabled: boolean;
   notificationsEnabled: boolean;
-  theme: 'light' | 'dark' | 'auto';
+  theme: "light" | "dark" | "auto";
   language: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   privacy: {
     showOnLeaderboard: boolean;
     allowFriendRequests: boolean;
@@ -143,7 +140,7 @@ export interface LeaderboardEntry {
 
 export interface Notification {
   id: string;
-  type: 'achievement' | 'friend_request' | 'challenge' | 'system' | 'reward';
+  type: "achievement" | "friend_request" | "challenge" | "system" | "reward";
   title: string;
   message: string;
   iconUrl?: string;
@@ -155,7 +152,11 @@ export interface Notification {
 
 export interface ActivityItem {
   id: string;
-  type: 'quest_completed' | 'achievement_unlocked' | 'level_up' | 'friend_added';
+  type:
+    | "quest_completed"
+    | "achievement_unlocked"
+    | "level_up"
+    | "friend_added";
   description: string;
   timestamp: Timestamp;
   relatedData?: any;
@@ -165,8 +166,8 @@ export interface Challenge {
   id: string;
   name: string;
   description: string;
-  type: 'daily' | 'weekly' | 'special';
-  difficulty: 'easy' | 'medium' | 'hard';
+  type: "daily" | "weekly" | "special";
+  difficulty: "easy" | "medium" | "hard";
   reward: {
     coins: number;
     experience: number;
@@ -184,12 +185,12 @@ export interface FriendActivity {
   friendAvatarUrl: string;
   activity: string;
   timestamp: Timestamp;
-  type: 'quest' | 'achievement' | 'level_up';
+  type: "quest" | "achievement" | "level_up";
 }
 
 export interface Recommendation {
   id: string;
-  type: 'quest' | 'friend' | 'challenge' | 'feature';
+  type: "quest" | "friend" | "challenge" | "feature";
   title: string;
   description: string;
   actionText: string;
@@ -201,9 +202,16 @@ export interface Recommendation {
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  error?: string;
+  error?:
+    | string
+    | {
+        code: string;
+        message: string;
+        details?: any;
+      };
   message?: string;
   timestamp: string;
+  metadata?: any;
 }
 
 class GameStateApiService {
@@ -218,16 +226,16 @@ class GameStateApiService {
       if (!userId) {
         return {
           success: false,
-          error: 'INVALID_USER_ID',
-          message: 'User ID is required',
-          timestamp: new Date().toISOString()
+          error: "INVALID_USER_ID",
+          message: "User ID is required",
+          timestamp: new Date().toISOString(),
         };
       }
 
       // Fetch user data
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       const userDoc = await getDoc(userRef);
-      
+
       let userData = userDoc.data();
       let isNewUser = false;
 
@@ -237,13 +245,23 @@ class GameStateApiService {
         userData = await this.createDefaultUser(userId);
       }
 
+      if (!userData) {
+        return {
+          success: false,
+          error: "USER_DATA_UNAVAILABLE",
+          message: "User data could not be loaded.",
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       // Fetch all game state components in parallel
-      const [questState, profileState, leaderboardState, homeState] = await Promise.all([
-        this.getQuestGameState(userId, userData),
-        this.getProfileGameState(userId, userData),
-        this.getLeaderboardGameState(userId, userData),
-        this.getHomeGameState(userId, userData)
-      ]);
+      const [questState, profileState, leaderboardState, homeState] =
+        await Promise.all([
+          this.getQuestGameState(userId, userData),
+          this.getProfileGameState(userId, userData),
+          this.getLeaderboardGameState(userId, userData),
+          this.getHomeGameState(userId, userData),
+        ]);
 
       const gameState: GameState = {
         user: {
@@ -254,13 +272,13 @@ class GameStateApiService {
           totalExperience: userData.totalExperience || 0,
           coins: userData.coins || 0,
           lastLoginAt: userData.lastActive || Timestamp.now(),
-          sessionId: this.generateSessionId()
+          sessionId: this.generateSessionId(),
         },
         quests: questState,
         profile: profileState,
         leaderboard: leaderboardState,
         home: homeState,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       };
 
       // Update last login
@@ -269,24 +287,37 @@ class GameStateApiService {
       return {
         success: true,
         data: gameState,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      console.error('Error fetching initial game state:', error);
+      console.error("Error fetching initial game state:", error);
       return {
         success: false,
-        error: 'FETCH_FAILED',
-        message: 'Failed to fetch initial game state',
-        timestamp: new Date().toISOString()
+        error: "FETCH_FAILED",
+        message: "Failed to fetch initial game state",
+        timestamp: new Date().toISOString(),
       };
     }
   }
 
   /**
-   * Real-time game state subscription
+   * Real-time game state subscription - TEMPORARILY DISABLED to fix 400 errors
    */
-  subscribeToGameState(userId: string, callback: (gameState: GameState) => void): () => void {
+  subscribeToGameState(
+    userId: string,
+    _callback: (gameState: GameState) => void
+  ): () => void {
+    console.log(
+      `⚠️ Real-time game state subscription disabled to prevent 400 errors for user: ${userId}`
+    );
+
+    // Return a no-op unsubscribe function
+    return () => {
+      console.log(`🛑 No-op unsubscribe for game state: ${userId}`);
+    };
+
+    // ORIGINAL CODE COMMENTED OUT TO FIX 400 ERRORS:
+    /*
     const unsubscribeKey = `gamestate_${userId}`;
     
     // Clean up existing subscription
@@ -319,12 +350,16 @@ class GameStateApiService {
 
     this.unsubscribeCallbacks.set(unsubscribeKey, unsubscribe);
     return unsubscribe;
+    */
   }
 
   /**
    * Sync game state changes
    */
-  async syncGameState(userId: string, changes: Partial<GameState>): Promise<ApiResponse> {
+  async syncGameState(
+    userId: string,
+    changes: Partial<GameState>
+  ): Promise<ApiResponse> {
     try {
       const batch = writeBatch(db);
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
@@ -332,7 +367,7 @@ class GameStateApiService {
       // Prepare update data
       const updateData: any = {
         lastActive: Timestamp.now(),
-        lastSyncAt: Timestamp.now()
+        lastSyncAt: Timestamp.now(),
       };
 
       // Apply user state changes
@@ -341,7 +376,7 @@ class GameStateApiService {
           level: changes.user.currentLevel,
           totalExperience: changes.user.totalExperience,
           coins: changes.user.coins,
-          hasCompletedTutorial: changes.user.hasCompletedTutorial
+          hasCompletedTutorial: changes.user.hasCompletedTutorial,
         });
       }
 
@@ -354,7 +389,7 @@ class GameStateApiService {
           badges: changes.profile.badges,
           stats: changes.profile.stats,
           inventory: changes.profile.inventory,
-          preferences: changes.profile.preferences
+          preferences: changes.profile.preferences,
         });
       }
 
@@ -363,17 +398,16 @@ class GameStateApiService {
 
       return {
         success: true,
-        message: 'Game state synchronized successfully',
-        timestamp: new Date().toISOString()
+        message: "Game state synchronized successfully",
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      console.error('Error syncing game state:', error);
+      console.error("Error syncing game state:", error);
       return {
         success: false,
-        error: 'SYNC_FAILED',
-        message: 'Failed to synchronize game state',
-        timestamp: new Date().toISOString()
+        error: "SYNC_FAILED",
+        message: "Failed to synchronize game state",
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -391,11 +425,11 @@ class GameStateApiService {
       experience: 0,
       totalExperience: 0,
       experienceToNextLevel: 100,
-      rankTitle: 'Novice Champion',
+      rankTitle: "Novice Champion",
       location: {
-        city: 'Adventure City',
-        state: 'Questland',
-        country: 'Imagination'
+        city: "Adventure City",
+        state: "Questland",
+        country: "Imagination",
       },
       completedTasks: [],
       friendsList: [],
@@ -408,72 +442,81 @@ class GameStateApiService {
         friendsCount: 0,
         challengesWon: 0,
         streakDays: 0,
-        favoriteCategory: '',
-        averageSessionTime: 0
+        favoriteCategory: "",
+        averageSessionTime: 0,
       },
       inventory: [],
       preferences: {
         soundEnabled: true,
         notificationsEnabled: true,
-        theme: 'auto',
-        language: 'en',
-        difficulty: 'easy',
+        theme: "auto",
+        language: "en",
+        difficulty: "easy",
         privacy: {
           showOnLeaderboard: true,
           allowFriendRequests: true,
-          showActivity: true
-        }
+          showActivity: true,
+        },
       },
       hasCompletedTutorial: false,
       createdAt: Timestamp.now(),
-      lastActive: Timestamp.now()
+      lastActive: Timestamp.now(),
     };
 
     const userRef = doc(db, `${getBasePath()}/users/${userId}`);
     await setDoc(userRef, defaultUserData);
-    
+
     return defaultUserData;
   }
 
-  private async getQuestGameState(userId: string, userData: any): Promise<QuestGameState> {
+  private async getQuestGameState(
+    _userId: string,
+    userData: any
+  ): Promise<QuestGameState> {
     try {
       // Fetch available quests
       const themesRef = collection(db, `${getBasePath()}/themes`);
-      const themesQuery = query(themesRef, where('isActive', '==', true));
+      const themesQuery = query(themesRef, where("isActive", "==", true));
       const themesSnapshot = await getDocs(themesQuery);
-      
+
       const totalQuests = themesSnapshot.docs.reduce((sum, doc) => {
         const data = doc.data();
         return sum + (data.tasks?.length || 0);
       }, 0);
 
       const completedTasks = userData.completedTasks || [];
-      const inProgressTasks = userData.inProgressTasks || [];
+      const inProgressQuests = userData.inProgressTasks || [];
 
       return {
         availableQuests: totalQuests,
         completedQuests: completedTasks.length,
         inProgressQuests,
-        dailyChallenges: await this.getDailyChallenges(userId),
-        weeklyGoals: await this.getWeeklyGoals(userId),
-        nextRecommendedQuest: await this.getNextRecommendedQuest(userId, completedTasks)
+        dailyChallenges: await this.getDailyChallenges(_userId),
+        weeklyGoals: await this.getWeeklyGoals(_userId),
+        nextRecommendedQuest: await this.getNextRecommendedQuest(
+          _userId,
+          completedTasks
+        ),
       };
     } catch (error) {
-      console.error('Error fetching quest game state:', error);
+      console.error("Error fetching quest game state:", error);
       return {
         availableQuests: 0,
         completedQuests: 0,
         inProgressQuests: [],
         dailyChallenges: [],
         weeklyGoals: [],
-        nextRecommendedQuest: null
+        nextRecommendedQuest: null,
       };
     }
   }
 
-  private async getProfileGameState(userId: string, userData: any): Promise<ProfileGameState> {
+  private async getProfileGameState(
+    _userId: string,
+    userData: any
+  ): Promise<ProfileGameState> {
     return {
-      username: userData.username || 'Champion',
+      username: userData.username || "Champion",
       avatarUrl: userData.avatarUrl || this.getRandomAvatar(),
       level: userData.level || 1,
       experience: userData.experience || 0,
@@ -486,32 +529,35 @@ class GameStateApiService {
         friendsCount: 0,
         challengesWon: 0,
         streakDays: 0,
-        favoriteCategory: '',
-        averageSessionTime: 0
+        favoriteCategory: "",
+        averageSessionTime: 0,
       },
       inventory: userData.inventory || [],
       preferences: userData.preferences || {
         soundEnabled: true,
         notificationsEnabled: true,
-        theme: 'auto',
-        language: 'en',
-        difficulty: 'easy',
+        theme: "auto",
+        language: "en",
+        difficulty: "easy",
         privacy: {
           showOnLeaderboard: true,
           allowFriendRequests: true,
-          showActivity: true
-        }
-      }
+          showActivity: true,
+        },
+      },
     };
   }
 
-  private async getLeaderboardGameState(userId: string, userData: any): Promise<LeaderboardGameState> {
+  private async getLeaderboardGameState(
+    userId: string,
+    _userData: any
+  ): Promise<LeaderboardGameState> {
     try {
       // Get user's rank
       const usersRef = collection(db, `${getBasePath()}/users`);
-      const leaderboardQuery = query(usersRef, orderBy('coins', 'desc'));
+      const leaderboardQuery = query(usersRef, orderBy("coins", "desc"));
       const leaderboardSnapshot = await getDocs(leaderboardQuery);
-      
+
       let userRank = 0;
       let totalPlayers = leaderboardSnapshot.docs.length;
       const nearbyCompetitors: LeaderboardEntry[] = [];
@@ -521,7 +567,7 @@ class GameStateApiService {
         if (doc.id === userId) {
           userRank = index + 1;
         }
-        
+
         // Get nearby competitors (±5 positions)
         if (Math.abs(index - userRank) <= 5) {
           nearbyCompetitors.push({
@@ -532,7 +578,7 @@ class GameStateApiService {
             rank: index + 1,
             change: 0, // TODO: Calculate from previous rankings
             level: data.level,
-            badges: data.badges?.map((b: any) => b.id) || []
+            badges: data.badges?.map((b: any) => b.id) || [],
           });
         }
       });
@@ -543,29 +589,38 @@ class GameStateApiService {
         nearbyCompetitors,
         weeklyRank: userRank, // TODO: Implement weekly rankings
         monthlyRank: userRank, // TODO: Implement monthly rankings
-        categoryRanks: {} // TODO: Implement category-specific rankings
+        categoryRanks: {}, // TODO: Implement category-specific rankings
       };
     } catch (error) {
-      console.error('Error fetching leaderboard game state:', error);
+      console.error("Error fetching leaderboard game state:", error);
       return {
         userRank: 0,
         totalPlayers: 0,
         nearbyCompetitors: [],
         weeklyRank: 0,
         monthlyRank: 0,
-        categoryRanks: {}
+        categoryRanks: {},
       };
     }
   }
 
-  private async getHomeGameState(userId: string, userData: any): Promise<HomeGameState> {
+  private async getHomeGameState(
+    userId: string,
+    _userData: any
+  ): Promise<HomeGameState> {
     try {
-      const [notifications, activityFeed, dailyChallenges, friendActivities, recommendations] = await Promise.all([
+      const [
+        notifications,
+        activityFeed,
+        dailyChallenges,
+        friendActivities,
+        recommendations,
+      ] = await Promise.all([
         this.getNotifications(userId),
         this.getActivityFeed(userId),
         this.getDailyChallenges(userId),
         this.getFriendActivities(userId),
-        this.getRecommendations(userId)
+        this.getRecommendations(userId),
       ]);
 
       return {
@@ -574,65 +629,72 @@ class GameStateApiService {
         dailyChallenges,
         friendActivities,
         recommendations,
-        unreadCount: notifications.filter(n => !n.isRead).length
+        unreadCount: notifications.filter((n) => !n.isRead).length,
       };
     } catch (error) {
-      console.error('Error fetching home game state:', error);
+      console.error("Error fetching home game state:", error);
       return {
         notifications: [],
         activityFeed: [],
         dailyChallenges: [],
         friendActivities: [],
         recommendations: [],
-        unreadCount: 0
+        unreadCount: 0,
       };
     }
   }
 
-  private async getDailyChallenges(userId: string): Promise<Challenge[]> {
+  private async getDailyChallenges(_userId: string): Promise<Challenge[]> {
     // TODO: Implement daily challenges logic
     return [
       {
-        id: 'daily_1',
-        name: 'Complete 3 Quests',
-        description: 'Finish any 3 quests today',
-        type: 'daily',
-        difficulty: 'easy',
+        id: "daily_1",
+        name: "Complete 3 Quests",
+        description: "Finish any 3 quests today",
+        type: "daily",
+        difficulty: "easy",
         reward: { coins: 50, experience: 25 },
         progress: 0,
         maxProgress: 3,
-        expiresAt: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)),
-        isCompleted: false
-      }
+        expiresAt: Timestamp.fromDate(
+          new Date(Date.now() + 24 * 60 * 60 * 1000)
+        ),
+        isCompleted: false,
+      },
     ];
   }
 
-  private async getWeeklyGoals(userId: string): Promise<any[]> {
+  private async getWeeklyGoals(_userId: string): Promise<any[]> {
     // TODO: Implement weekly goals logic
     return [];
   }
 
-  private async getNextRecommendedQuest(userId: string, completedTasks: string[]): Promise<string | null> {
+  private async getNextRecommendedQuest(
+    _userId: string,
+    _completedTasks: string[]
+  ): Promise<string | null> {
     // TODO: Implement quest recommendation logic
     return null;
   }
 
-  private async getNotifications(userId: string): Promise<Notification[]> {
+  private async getNotifications(_userId: string): Promise<Notification[]> {
     // TODO: Implement notifications fetching
     return [];
   }
 
-  private async getActivityFeed(userId: string): Promise<ActivityItem[]> {
+  private async getActivityFeed(_userId: string): Promise<ActivityItem[]> {
     // TODO: Implement activity feed logic
     return [];
   }
 
-  private async getFriendActivities(userId: string): Promise<FriendActivity[]> {
+  private async getFriendActivities(
+    _userId: string
+  ): Promise<FriendActivity[]> {
     // TODO: Implement friend activities logic
     return [];
   }
 
-  private async getRecommendations(userId: string): Promise<Recommendation[]> {
+  private async getRecommendations(_userId: string): Promise<Recommendation[]> {
     // TODO: Implement recommendations logic
     return [];
   }
@@ -642,10 +704,10 @@ class GameStateApiService {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       await updateDoc(userRef, {
         lastActive: Timestamp.now(),
-        lastLoginAt: Timestamp.now()
+        lastLoginAt: Timestamp.now(),
       });
     } catch (error) {
-      console.error('Error updating last login:', error);
+      console.error("Error updating last login:", error);
     }
   }
 
@@ -655,7 +717,9 @@ class GameStateApiService {
 
   private generateFriendlyUserId(): string {
     const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
     return `KQ${timestamp.slice(0, 3)}${random}`;
   }
 
@@ -666,7 +730,7 @@ class GameStateApiService {
       "https://images.pexels.com/photos/3662845/pexels-photo-3662845.jpeg?auto=compress&cs=tinysrgb&w=150",
       "https://images.pexels.com/photos/4588465/pexels-photo-4588465.jpeg?auto=compress&cs=tinysrgb&w=150",
       "https://images.pexels.com/photos/4010442/pexels-photo-4010442.jpeg?auto=compress&cs=tinysrgb&w=150",
-      "https://images.pexels.com/photos/1643457/pexels-photo-1643457.jpeg?auto=compress&cs=tinysrgb&w=150"
+      "https://images.pexels.com/photos/1643457/pexels-photo-1643457.jpeg?auto=compress&cs=tinysrgb&w=150",
     ];
     return avatars[Math.floor(Math.random() * avatars.length)];
   }

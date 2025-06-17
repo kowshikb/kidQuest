@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db, getBasePath } from '../firebase/config';
-import { useModal } from './ModalContext';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { db, getBasePath } from "../firebase/config";
+import { useModal } from "./ModalContext";
 
 export interface Task {
   id: string;
@@ -17,8 +23,19 @@ export interface Theme {
   id: string;
   name: string;
   description: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  category: 'Life Skills' | 'Academics' | 'Social-Emotional' | 'Creative Arts' | 'Science' | 'Community' | 'Health' | 'Education' | 'Math' | 'Language' | 'Art';
+  difficulty: "Easy" | "Medium" | "Hard";
+  category:
+    | "Life Skills"
+    | "Academics"
+    | "Social-Emotional"
+    | "Creative Arts"
+    | "Science"
+    | "Community"
+    | "Health"
+    | "Education"
+    | "Math"
+    | "Language"
+    | "Art";
   tasks: Task[];
   imageUrl?: string;
   isActive?: boolean;
@@ -47,7 +64,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 }
@@ -68,15 +85,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   });
   const { showModal } = useModal();
 
-  // Load mock themes immediately when provider mounts
+  // Load themes from backend when provider mounts
   useEffect(() => {
-    console.log('ThemeProvider mounted, loading mock themes immediately');
-    loadMockThemes();
+    console.log("ThemeProvider mounted, attempting to load from backend first");
+    // Try to load from backend first, fallback to mock if needed
+    const loadThemes = async () => {
+      try {
+        // For now, we'll use mock themes since backend might not be fully set up
+        // TODO: Switch to fetchThemesFromDatabase when backend is ready
+        loadMockThemes();
+      } catch (error) {
+        console.error("Failed to load themes:", error);
+        loadMockThemes();
+      }
+    };
+    loadThemes();
   }, []);
 
   // Load comprehensive mock themes for immediate display
   const loadMockThemes = () => {
-    console.log('Loading comprehensive mock themes...');
+    console.log("Loading comprehensive mock themes...");
     const mockThemes: Theme[] = [
       {
         id: "theme1",
@@ -84,14 +112,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         description: "Master magical mathematics and number spells!",
         difficulty: "Easy",
         category: "Math",
-        imageUrl: "https://images.pexels.com/photos/3771074/pexels-photo-3771074.jpeg?auto=compress&cs=tinysrgb&w=400",
+        imageUrl:
+          "https://images.pexels.com/photos/3771074/pexels-photo-3771074.jpeg?auto=compress&cs=tinysrgb&w=400",
         isActive: true,
         order: 1,
         tasks: [
-          { 
-            id: "math_001", 
+          {
+            id: "math_001",
             title: "Addition Spells",
-            description: "Learn to cast addition spells with numbers 1-10", 
+            description: "Learn to cast addition spells with numbers 1-10",
             coins: 50,
             coinReward: 50,
             type: "quiz",
@@ -113,12 +142,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                   options: ["7", "8", "9", "10"],
                 },
               ],
-            }
+            },
           },
-          { 
-            id: "math_002", 
+          {
+            id: "math_002",
             title: "Subtraction Sorcery",
-            description: "Master the art of subtraction magic", 
+            description: "Master the art of subtraction magic",
             coins: 60,
             coinReward: 60,
             type: "quiz",
@@ -135,12 +164,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                   options: ["4", "5", "6", "7"],
                 },
               ],
-            }
+            },
           },
-          { 
-            id: "math_003", 
+          {
+            id: "math_003",
             title: "Multiplication Mastery",
-            description: "Unlock the secrets of multiplication", 
+            description: "Unlock the secrets of multiplication",
             coins: 75,
             coinReward: 75,
             type: "quiz",
@@ -152,32 +181,34 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                   options: ["10", "11", "12", "13"],
                 },
               ],
-            }
+            },
           },
-          { 
-            id: "math_004", 
+          {
+            id: "math_004",
             title: "Division Discovery",
-            description: "Explore the magic of division", 
+            description: "Explore the magic of division",
             coins: 80,
             coinReward: 80,
-            type: "quiz"
-          }
-        ]
+            type: "quiz",
+          },
+        ],
       },
       {
         id: "theme2",
         name: "Science Quest Laboratory",
-        description: "Explore the wonders of science through magical experiments!",
+        description:
+          "Explore the wonders of science through magical experiments!",
         difficulty: "Medium",
         category: "Science",
-        imageUrl: "https://images.pexels.com/photos/2280549/pexels-photo-2280549.jpeg?auto=compress&cs=tinysrgb&w=400",
+        imageUrl:
+          "https://images.pexels.com/photos/2280549/pexels-photo-2280549.jpeg?auto=compress&cs=tinysrgb&w=400",
         isActive: true,
         order: 2,
         tasks: [
-          { 
-            id: "science_001", 
+          {
+            id: "science_001",
             title: "States of Matter Magic",
-            description: "Discover the three states of matter", 
+            description: "Discover the three states of matter",
             coins: 75,
             coinReward: 75,
             type: "quiz",
@@ -186,7 +217,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 {
                   question: "What happens to ice when it gets warm?",
                   answer: "It melts",
-                  options: ["It melts", "It freezes", "It disappears", "It grows"],
+                  options: [
+                    "It melts",
+                    "It freezes",
+                    "It disappears",
+                    "It grows",
+                  ],
                 },
                 {
                   question: "What state is water vapor?",
@@ -194,12 +230,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                   options: ["Solid", "Liquid", "Gas", "Plasma"],
                 },
               ],
-            }
+            },
           },
-          { 
-            id: "science_002", 
+          {
+            id: "science_002",
             title: "Animal Kingdom Adventure",
-            description: "Learn about different animal habitats", 
+            description: "Learn about different animal habitats",
             coins: 80,
             coinReward: 80,
             type: "matching",
@@ -209,40 +245,42 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 { animal: "Bird", habitat: "Sky" },
                 { animal: "Bear", habitat: "Forest" },
               ],
-            }
+            },
           },
-          { 
-            id: "science_003", 
+          {
+            id: "science_003",
             title: "Weather Wizard",
-            description: "Understand how weather patterns work", 
+            description: "Understand how weather patterns work",
             coins: 85,
             coinReward: 85,
-            type: "activity"
+            type: "activity",
           },
-          { 
-            id: "science_004", 
+          {
+            id: "science_004",
             title: "Plant Power",
-            description: "Learn how plants grow and survive", 
+            description: "Learn how plants grow and survive",
             coins: 70,
             coinReward: 70,
-            type: "quiz"
-          }
-        ]
+            type: "quiz",
+          },
+        ],
       },
       {
         id: "theme3",
         name: "Language Arts Castle",
-        description: "Build your vocabulary and reading skills in the magical castle!",
+        description:
+          "Build your vocabulary and reading skills in the magical castle!",
         difficulty: "Easy",
         category: "Language",
-        imageUrl: "https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&cs=tinysrgb&w=400",
+        imageUrl:
+          "https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&cs=tinysrgb&w=400",
         isActive: true,
         order: 3,
         tasks: [
-          { 
-            id: "language_001", 
+          {
+            id: "language_001",
             title: "Rhyme Time Spell",
-            description: "Find words that rhyme together", 
+            description: "Find words that rhyme together",
             coins: 45,
             coinReward: 45,
             type: "matching",
@@ -252,52 +290,55 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 { word1: "Dog", word2: "Log" },
                 { word1: "Sun", word2: "Fun" },
               ],
-            }
+            },
           },
-          { 
-            id: "language_002", 
+          {
+            id: "language_002",
             title: "Story Building Blocks",
-            description: "Create magical stories with beginning, middle, and end", 
+            description:
+              "Create magical stories with beginning, middle, and end",
             coins: 65,
             coinReward: 65,
             type: "creative",
             data: {
               prompt: "Write a short story about a magical adventure",
               minWords: 50,
-            }
+            },
           },
-          { 
-            id: "language_003", 
+          {
+            id: "language_003",
             title: "Vocabulary Vault",
-            description: "Expand your magical word collection", 
+            description: "Expand your magical word collection",
             coins: 55,
             coinReward: 55,
-            type: "quiz"
+            type: "quiz",
           },
-          { 
-            id: "language_004", 
+          {
+            id: "language_004",
             title: "Reading Comprehension Quest",
-            description: "Master the art of understanding stories", 
+            description: "Master the art of understanding stories",
             coins: 60,
             coinReward: 60,
-            type: "reading"
-          }
-        ]
+            type: "reading",
+          },
+        ],
       },
       {
         id: "theme4",
         name: "Art & Creativity Studio",
-        description: "Express yourself through magical art and creative projects!",
+        description:
+          "Express yourself through magical art and creative projects!",
         difficulty: "Easy",
         category: "Art",
-        imageUrl: "https://images.pexels.com/photos/1037992/pexels-photo-1037992.jpeg?auto=compress&cs=tinysrgb&w=400",
+        imageUrl:
+          "https://images.pexels.com/photos/1037992/pexels-photo-1037992.jpeg?auto=compress&cs=tinysrgb&w=400",
         isActive: true,
         order: 4,
         tasks: [
-          { 
-            id: "art_001", 
+          {
+            id: "art_001",
             title: "Color Mixing Magic",
-            description: "Learn what happens when you mix primary colors", 
+            description: "Learn what happens when you mix primary colors",
             coins: 55,
             coinReward: 55,
             type: "quiz",
@@ -309,41 +350,42 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                   options: ["Purple", "Green", "Orange", "Yellow"],
                 },
                 {
-                  question: "What color do you get when you mix yellow and blue?",
+                  question:
+                    "What color do you get when you mix yellow and blue?",
                   answer: "Green",
                   options: ["Purple", "Green", "Orange", "Pink"],
                 },
               ],
-            }
+            },
           },
-          { 
-            id: "art_002", 
+          {
+            id: "art_002",
             title: "Shape Recognition Quest",
-            description: "Identify and draw different magical shapes", 
+            description: "Identify and draw different magical shapes",
             coins: 50,
             coinReward: 50,
             type: "drawing",
             data: {
               shapes: ["Circle", "Square", "Triangle", "Rectangle", "Star"],
-            }
+            },
           },
-          { 
-            id: "art_003", 
+          {
+            id: "art_003",
             title: "Creative Expression",
-            description: "Create your own magical artwork", 
+            description: "Create your own magical artwork",
             coins: 70,
             coinReward: 70,
-            type: "creative"
+            type: "creative",
           },
-          { 
-            id: "art_004", 
+          {
+            id: "art_004",
             title: "Pattern Power",
-            description: "Discover and create beautiful patterns", 
+            description: "Discover and create beautiful patterns",
             coins: 65,
             coinReward: 65,
-            type: "activity"
-          }
-        ]
+            type: "activity",
+          },
+        ],
       },
       {
         id: "theme5",
@@ -351,35 +393,36 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         description: "Learn to work together and make friends!",
         difficulty: "Medium",
         category: "Social-Emotional",
-        imageUrl: "https://images.pexels.com/photos/1181534/pexels-photo-1181534.jpeg?auto=compress&cs=tinysrgb&w=400",
+        imageUrl:
+          "https://images.pexels.com/photos/1181534/pexels-photo-1181534.jpeg?auto=compress&cs=tinysrgb&w=400",
         isActive: true,
         order: 5,
         tasks: [
-          { 
-            id: "social_001", 
+          {
+            id: "social_001",
             title: "Friendship Building",
-            description: "Learn how to be a good friend", 
+            description: "Learn how to be a good friend",
             coins: 60,
             coinReward: 60,
-            type: "activity"
+            type: "activity",
           },
-          { 
-            id: "social_002", 
+          {
+            id: "social_002",
             title: "Teamwork Challenge",
-            description: "Practice working together with others", 
+            description: "Practice working together with others",
             coins: 70,
             coinReward: 70,
-            type: "group"
+            type: "group",
           },
-          { 
-            id: "social_003", 
+          {
+            id: "social_003",
             title: "Kindness Quest",
-            description: "Spread kindness and help others", 
+            description: "Spread kindness and help others",
             coins: 65,
             coinReward: 65,
-            type: "activity"
-          }
-        ]
+            type: "activity",
+          },
+        ],
       },
       {
         id: "theme6",
@@ -387,39 +430,44 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         description: "Master important skills for everyday life!",
         difficulty: "Easy",
         category: "Life Skills",
-        imageUrl: "https://images.pexels.com/photos/1181772/pexels-photo-1181772.jpeg?auto=compress&cs=tinysrgb&w=400",
+        imageUrl:
+          "https://images.pexels.com/photos/1181772/pexels-photo-1181772.jpeg?auto=compress&cs=tinysrgb&w=400",
         isActive: true,
         order: 6,
         tasks: [
-          { 
-            id: "life_001", 
+          {
+            id: "life_001",
             title: "Time Management Magic",
-            description: "Learn to organize your time wisely", 
+            description: "Learn to organize your time wisely",
             coins: 50,
             coinReward: 50,
-            type: "activity"
+            type: "activity",
           },
-          { 
-            id: "life_002", 
+          {
+            id: "life_002",
             title: "Money Matters",
-            description: "Understand the basics of money and saving", 
+            description: "Understand the basics of money and saving",
             coins: 75,
             coinReward: 75,
-            type: "quiz"
+            type: "quiz",
           },
-          { 
-            id: "life_003", 
+          {
+            id: "life_003",
             title: "Healthy Habits",
-            description: "Build good habits for a healthy life", 
+            description: "Build good habits for a healthy life",
             coins: 55,
             coinReward: 55,
-            type: "activity"
-          }
-        ]
-      }
+            type: "activity",
+          },
+        ],
+      },
     ];
-    
-    console.log('Mock themes loaded successfully:', mockThemes.length, 'themes');
+
+    console.log(
+      "Mock themes loaded successfully:",
+      mockThemes.length,
+      "themes"
+    );
     setThemes(mockThemes);
     setFilteredThemes(mockThemes);
     setError(null);
@@ -429,76 +477,75 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Fetch themes from Firestore (optional, as fallback)
   const fetchThemesFromDatabase = async (currentUser: any) => {
     if (!currentUser) {
-      console.log('No user provided for database fetch');
+      console.log("No user provided for database fetch");
       return;
     }
 
     try {
       setLoading(true);
-      console.log('Attempting to fetch themes from Firestore...');
+      console.log("Attempting to fetch themes from Firestore...");
 
       const themesRef = collection(db, `${getBasePath()}/themes`);
-      
+
       // Try to get themes with ordering
       let themesQuery;
       try {
         themesQuery = query(
           themesRef,
-          where('isActive', '==', true),
-          orderBy('order', 'asc')
+          where("isActive", "==", true),
+          orderBy("order", "asc")
         );
       } catch (indexError) {
-        console.warn('Index not available, using simple query:', indexError);
+        console.warn("Index not available, using simple query:", indexError);
         themesQuery = query(themesRef);
       }
-      
+
       const querySnapshot = await getDocs(themesQuery);
       console.log(`Found ${querySnapshot.docs.length} themes in database`);
-      
+
       if (querySnapshot.docs.length > 0) {
         const themesData: Theme[] = [];
         querySnapshot.docs.forEach((doc) => {
           const data = doc.data();
-          
+
           // Transform the data to match our interface
           const theme: Theme = {
             id: doc.id,
-            name: data.name || 'Unnamed Theme',
-            description: data.description || 'No description available',
-            difficulty: data.difficulty || 'Easy',
-            category: data.category || 'Education',
+            name: data.name || "Unnamed Theme",
+            description: data.description || "No description available",
+            difficulty: data.difficulty || "Easy",
+            category: data.category || "Education",
             imageUrl: data.imageUrl,
             isActive: data.isActive !== false,
             order: data.order || 0,
             tasks: (data.tasks || []).map((task: any) => ({
               id: task.id || `task_${Math.random()}`,
-              title: task.title || task.description || 'Untitled Task',
-              description: task.description || 'No description',
+              title: task.title || task.description || "Untitled Task",
+              description: task.description || "No description",
               coins: task.coins || task.coinReward || 10,
               coinReward: task.coinReward || task.coins || 10,
-              type: task.type || 'activity',
-              data: task.data || {}
-            }))
+              type: task.type || "activity",
+              data: task.data || {},
+            })),
           };
-          
+
           themesData.push(theme);
         });
-        
+
         // Sort by order if available
         themesData.sort((a, b) => (a.order || 0) - (b.order || 0));
-        
-        console.log('Database themes loaded successfully:', themesData.length);
+
+        console.log("Database themes loaded successfully:", themesData.length);
         setThemes(themesData);
         setFilteredThemes(themesData);
         setError(null);
       } else {
-        console.log('No themes found in database, keeping mock themes');
+        console.log("No themes found in database, keeping mock themes");
       }
-      
     } catch (err) {
       console.error("Error fetching themes from database:", err);
-      console.log('Database fetch failed, keeping mock themes');
-      
+      console.log("Database fetch failed, keeping mock themes");
+
       // Don't show error modal for database issues, just keep using mock themes
       setError(null);
     } finally {
@@ -513,23 +560,24 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     searchTerm: string | null = activeFilters.searchTerm
   ) => {
     let filtered = [...themes];
-    
+
     if (category) {
-      filtered = filtered.filter(theme => theme.category === category);
+      filtered = filtered.filter((theme) => theme.category === category);
     }
-    
+
     if (difficulty) {
-      filtered = filtered.filter(theme => theme.difficulty === difficulty);
+      filtered = filtered.filter((theme) => theme.difficulty === difficulty);
     }
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(theme => 
-        theme.name.toLowerCase().includes(term) || 
-        theme.description.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (theme) =>
+          theme.name.toLowerCase().includes(term) ||
+          theme.description.toLowerCase().includes(term)
       );
     }
-    
+
     setFilteredThemes(filtered);
     setActiveFilters({ category, difficulty, searchTerm });
   };
@@ -547,8 +595,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     error,
     filteredThemes,
     filterThemes,
-    activeFilters
+    activeFilters,
   };
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 };

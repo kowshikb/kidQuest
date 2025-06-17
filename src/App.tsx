@@ -12,7 +12,7 @@ import { SoundProvider } from "./contexts/SoundContext";
 import { ModalProvider } from "./contexts/ModalContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import ThemePage from "./pages/ThemePage";
+import HobbiesPage from "./pages/HobbiesPage";
 import QuestsPage from "./pages/QuestsPage";
 import RoomsPage from "./pages/RoomsPage";
 import RoomDetail from "./pages/RoomDetail";
@@ -77,9 +77,12 @@ const AppContent: React.FC = () => {
   const { currentUser } = useAuth();
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-indigo-100 via-purple-50 to-blue-100">
+    <div className="relative min-h-screen bg-gradient-to-b from-indigo-100 via-purple-50 to-blue-100">
+      {/* Fixed Background Layer */}
+      <div className="fixed inset-0 bg-gradient-to-b from-indigo-100 via-purple-50 to-blue-100 -z-10"></div>
+
       {/* Magical floating background elements */}
-      <div className="fixed inset-0 pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-5">
         {Array.from({ length: 10 }).map((_, i) => (
           <motion.div
             key={i}
@@ -126,10 +129,10 @@ const AppContent: React.FC = () => {
               }
             />
             <Route
-              path="/themes"
+              path="/hobbies"
               element={
                 <ProtectedRoute>
-                  <ThemePage />
+                  <HobbiesPage />
                 </ProtectedRoute>
               }
             />
@@ -205,7 +208,7 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <SoundProvider>
           <ModalProvider>
             <AuthProvider>

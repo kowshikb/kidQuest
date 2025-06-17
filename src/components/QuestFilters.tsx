@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, Search, ChevronDown, ChevronUp, X } from 'lucide-react';
-import { useSound } from '../contexts/SoundContext';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Filter, Search, ChevronDown, ChevronUp, X } from "lucide-react";
+import { useSound } from "../contexts/SoundContext";
 
 interface QuestFiltersProps {
   onFilterChange: (filters: {
@@ -20,42 +20,42 @@ interface QuestFiltersProps {
 const QuestFilters: React.FC<QuestFiltersProps> = ({
   onFilterChange,
   activeFilters,
-  className = ''
+  className = "",
 }) => {
   const { playSound } = useSound();
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(activeFilters.searchTerm || '');
+  const [searchTerm, setSearchTerm] = useState(activeFilters.searchTerm || "");
 
   const categories = [
-    'All',
-    'Math',
-    'Science',
-    'Language',
-    'Art',
-    'Social-Emotional',
-    'Life Skills',
-    'Academics',
-    'Creative Arts',
-    'Community',
-    'Health'
+    "All",
+    "Math",
+    "Science",
+    "Language",
+    "Art",
+    "Social-Emotional",
+    "Life Skills",
+    "Academics",
+    "Creative Arts",
+    "Community",
+    "Health",
   ];
 
-  const difficulties = ['All', 'Easy', 'Medium', 'Hard'];
+  const difficulties = ["All", "Easy", "Medium", "Hard"];
 
   const handleCategoryFilter = (category: string) => {
-    playSound('click');
+    playSound("click");
     onFilterChange({
       ...activeFilters,
-      category: category === 'All' ? null : category
+      category: category === "All" ? null : category,
     });
     setIsFilterMenuOpen(false);
   };
 
   const handleDifficultyFilter = (difficulty: string) => {
-    playSound('click');
+    playSound("click");
     onFilterChange({
       ...activeFilters,
-      difficulty: difficulty === 'All' ? null : difficulty
+      difficulty: difficulty === "All" ? null : difficulty,
     });
     setIsFilterMenuOpen(false);
   };
@@ -65,38 +65,43 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
     setSearchTerm(value);
     onFilterChange({
       ...activeFilters,
-      searchTerm: value || null
+      searchTerm: value || null,
     });
   };
 
-  const clearFilter = (filterType: 'category' | 'difficulty' | 'searchTerm') => {
-    playSound('click');
-    if (filterType === 'searchTerm') {
-      setSearchTerm('');
+  const clearFilter = (
+    filterType: "category" | "difficulty" | "searchTerm"
+  ) => {
+    playSound("click");
+    if (filterType === "searchTerm") {
+      setSearchTerm("");
     }
     onFilterChange({
       ...activeFilters,
-      [filterType]: null
+      [filterType]: null,
     });
   };
 
   const clearAllFilters = () => {
-    playSound('click');
-    setSearchTerm('');
+    playSound("click");
+    setSearchTerm("");
     onFilterChange({
       category: null,
       difficulty: null,
-      searchTerm: null
+      searchTerm: null,
     });
     setIsFilterMenuOpen(false);
   };
 
   const toggleFilterMenu = () => {
-    playSound('click');
+    playSound("click");
     setIsFilterMenuOpen(!isFilterMenuOpen);
   };
 
-  const hasActiveFilters = activeFilters.category || activeFilters.difficulty || activeFilters.searchTerm;
+  const hasActiveFilters =
+    activeFilters.category ||
+    activeFilters.difficulty ||
+    activeFilters.searchTerm;
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -116,7 +121,7 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
           />
           {searchTerm && (
             <button
-              onClick={() => clearFilter('searchTerm')}
+              onClick={() => clearFilter("searchTerm")}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
             >
               <X size={18} />
@@ -130,8 +135,8 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
             onClick={toggleFilterMenu}
             className={`flex items-center justify-center px-6 py-3 rounded-2xl font-medium transition-all duration-300 ${
               hasActiveFilters
-                ? 'bg-purple-600 text-white shadow-lg'
-                : 'bg-white border-2 border-purple-200 text-purple-600 hover:border-purple-300'
+                ? "bg-purple-600 text-white shadow-lg"
+                : "bg-white border-2 border-purple-200 text-purple-600 hover:border-purple-300"
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -140,7 +145,13 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
             <span>Filters</span>
             {hasActiveFilters && (
               <span className="ml-2 bg-white bg-opacity-20 text-xs px-2 py-0.5 rounded-full">
-                {[activeFilters.category, activeFilters.difficulty, activeFilters.searchTerm].filter(Boolean).length}
+                {
+                  [
+                    activeFilters.category,
+                    activeFilters.difficulty,
+                    activeFilters.searchTerm,
+                  ].filter(Boolean).length
+                }
               </span>
             )}
             <motion.div
@@ -169,15 +180,15 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
                     Category
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {categories.map(category => (
+                    {categories.map((category) => (
                       <motion.button
                         key={category}
                         onClick={() => handleCategoryFilter(category)}
                         className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          (category === 'All' && !activeFilters.category) || 
+                          (category === "All" && !activeFilters.category) ||
                           category === activeFilters.category
-                            ? 'bg-purple-600 text-white shadow-md'
-                            : 'bg-purple-50 text-purple-800 hover:bg-purple-100'
+                            ? "bg-purple-600 text-white shadow-md"
+                            : "bg-purple-50 text-purple-800 hover:bg-purple-100"
                         }`}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -195,15 +206,15 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
                     Difficulty
                   </h3>
                   <div className="flex gap-2">
-                    {difficulties.map(difficulty => (
+                    {difficulties.map((difficulty) => (
                       <motion.button
                         key={difficulty}
                         onClick={() => handleDifficultyFilter(difficulty)}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          (difficulty === 'All' && !activeFilters.difficulty) || 
+                          (difficulty === "All" && !activeFilters.difficulty) ||
                           difficulty === activeFilters.difficulty
-                            ? 'bg-orange-500 text-white shadow-md'
-                            : 'bg-orange-50 text-orange-800 hover:bg-orange-100'
+                            ? "bg-orange-500 text-white shadow-md"
+                            : "bg-orange-50 text-orange-800 hover:bg-orange-100"
                         }`}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -239,7 +250,9 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <span className="text-sm text-purple-600 font-medium">Active Filters:</span>
+          <span className="text-sm text-purple-600 font-medium">
+            Active Filters:
+          </span>
 
           {activeFilters.category && (
             <motion.span
@@ -250,7 +263,7 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
             >
               Category: {activeFilters.category}
               <button
-                onClick={() => clearFilter('category')}
+                onClick={() => clearFilter("category")}
                 className="ml-2 text-purple-600 hover:text-purple-800"
               >
                 <X size={14} />
@@ -267,7 +280,7 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
             >
               Difficulty: {activeFilters.difficulty}
               <button
-                onClick={() => clearFilter('difficulty')}
+                onClick={() => clearFilter("difficulty")}
                 className="ml-2 text-orange-600 hover:text-orange-800"
               >
                 <X size={14} />
@@ -284,7 +297,7 @@ const QuestFilters: React.FC<QuestFiltersProps> = ({
             >
               Search: "{activeFilters.searchTerm}"
               <button
-                onClick={() => clearFilter('searchTerm')}
+                onClick={() => clearFilter("searchTerm")}
                 className="ml-2 text-blue-600 hover:text-blue-800"
               >
                 <X size={14} />

@@ -1,17 +1,17 @@
-import { 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
   startAfter,
   doc,
   getDoc,
-  Timestamp
-} from 'firebase/firestore';
-import { db, getBasePath } from '../firebase/config';
-import { ApiResponse } from './gameStateApi';
+  Timestamp,
+} from "firebase/firestore";
+import { db, getBasePath } from "../firebase/config";
+import { ApiResponse } from "./gameStateApi";
 
 export interface LeaderboardEntry {
   userId: string;
@@ -35,7 +35,7 @@ export interface LeaderboardData {
   userEntry?: LeaderboardEntry;
   totalPlayers: number;
   lastUpdated: string;
-  period: 'all-time' | 'weekly' | 'monthly' | 'daily';
+  period: "all-time" | "weekly" | "monthly" | "daily";
 }
 
 export interface UserRankData {
@@ -63,7 +63,7 @@ export interface LeaderboardFilters {
     state?: string;
     city?: string;
   };
-  timeframe?: 'daily' | 'weekly' | 'monthly' | 'all-time';
+  timeframe?: "daily" | "weekly" | "monthly" | "all-time";
   minLevel?: number;
   maxLevel?: number;
 }
@@ -71,8 +71,8 @@ export interface LeaderboardFilters {
 export interface PaginationOptions {
   page: number;
   limit: number;
-  sortBy?: 'score' | 'level' | 'recent';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "score" | "level" | "recent";
+  sortOrder?: "asc" | "desc";
 }
 
 class LeaderboardApiService {
@@ -86,29 +86,29 @@ class LeaderboardApiService {
   ): Promise<ApiResponse<LeaderboardData>> {
     try {
       const usersRef = collection(db, `${getBasePath()}/users`);
-      
+
       // Build query based on filters
       let leaderboardQuery = query(usersRef);
-      
+
       // Apply location filters
       if (filters.location?.country) {
         leaderboardQuery = query(
           leaderboardQuery,
-          where('location.country', '==', filters.location.country)
+          where("location.country", "==", filters.location.country)
         );
       }
-      
+
       if (filters.location?.state) {
         leaderboardQuery = query(
           leaderboardQuery,
-          where('location.state', '==', filters.location.state)
+          where("location.state", "==", filters.location.state)
         );
       }
-      
+
       if (filters.location?.city) {
         leaderboardQuery = query(
           leaderboardQuery,
-          where('location.city', '==', filters.location.city)
+          where("location.city", "==", filters.location.city)
         );
       }
 
@@ -116,22 +116,26 @@ class LeaderboardApiService {
       if (filters.minLevel) {
         leaderboardQuery = query(
           leaderboardQuery,
-          where('level', '>=', filters.minLevel)
+          where("level", ">=", filters.minLevel)
         );
       }
-      
+
       if (filters.maxLevel) {
         leaderboardQuery = query(
           leaderboardQuery,
-          where('level', '<=', filters.maxLevel)
+          where("level", "<=", filters.maxLevel)
         );
       }
 
       // Apply sorting
-      const sortField = pagination.sortBy === 'level' ? 'level' : 
-                       pagination.sortBy === 'recent' ? 'lastActive' : 'coins';
-      const sortDirection = pagination.sortOrder === 'asc' ? 'asc' : 'desc';
-      
+      const sortField =
+        pagination.sortBy === "level"
+          ? "level"
+          : pagination.sortBy === "recent"
+          ? "lastActive"
+          : "coins";
+      const sortDirection = pagination.sortOrder === "asc" ? "asc" : "desc";
+
       leaderboardQuery = query(
         leaderboardQuery,
         orderBy(sortField, sortDirection)
@@ -147,13 +151,13 @@ class LeaderboardApiService {
       leaderboardQuery = query(leaderboardQuery, limit(pagination.limit));
 
       const snapshot = await getDocs(leaderboardQuery);
-      
+
       const entries: LeaderboardEntry[] = [];
       let rank = (pagination.page - 1) * pagination.limit + 1;
 
       snapshot.docs.forEach((docSnap) => {
         const userData = docSnap.data();
-        
+
         // Skip users who opted out of leaderboard
         if (userData.preferences?.privacy?.showOnLeaderboard === false) {
           return;
@@ -161,15 +165,15 @@ class LeaderboardApiService {
 
         const entry: LeaderboardEntry = {
           userId: docSnap.id,
-          username: userData.username || 'Anonymous Champion',
-          avatarUrl: userData.avatarUrl || '',
+          username: userData.username || "Anonymous Champion",
+          avatarUrl: userData.avatarUrl || "",
           score: userData.coins || 0,
           rank: rank++,
           change: 0, // TODO: Calculate from historical data
           level: userData.level || 1,
           badges: (userData.badges || []).map((b: any) => b.id),
           location: userData.location,
-          lastActive: userData.lastActive || Timestamp.now()
+          lastActive: userData.lastActive || Timestamp.now(),
         };
 
         entries.push(entry);
@@ -177,7 +181,7 @@ class LeaderboardApiService {
 
       // Get total count for pagination info
       const totalSnapshot = await getDocs(query(usersRef));
-      const totalPlayers = totalSnapshot.docs.filter(doc => {
+      const totalPlayers = totalSnapshot.docs.filter((doc) => {
         const data = doc.data();
         return data.preferences?.privacy?.showOnLeaderboard !== false;
       }).length;
@@ -186,22 +190,21 @@ class LeaderboardApiService {
         entries,
         totalPlayers,
         lastUpdated: new Date().toISOString(),
-        period: filters.timeframe || 'all-time'
+        period: filters.timeframe || "all-time",
       };
 
       return {
         success: true,
         data: leaderboardData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      console.error("Error fetching leaderboard:", error);
       return {
         success: false,
-        error: 'FETCH_FAILED',
-        message: 'Failed to fetch leaderboard data',
-        timestamp: new Date().toISOString()
+        error: "FETCH_FAILED",
+        message: "Failed to fetch leaderboard data",
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -215,9 +218,9 @@ class LeaderboardApiService {
       if (!userId) {
         return {
           success: false,
-          error: 'INVALID_USER_ID',
-          message: 'User ID is required',
-          timestamp: new Date().toISOString()
+          error: "INVALID_USER_ID",
+          message: "User ID is required",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -228,9 +231,9 @@ class LeaderboardApiService {
       if (!userDoc.exists()) {
         return {
           success: false,
-          error: 'USER_NOT_FOUND',
-          message: 'User not found',
-          timestamp: new Date().toISOString()
+          error: "USER_NOT_FOUND",
+          message: "User not found",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -238,7 +241,7 @@ class LeaderboardApiService {
 
       // Get all users for ranking calculation
       const usersRef = collection(db, `${getBasePath()}/users`);
-      const allUsersQuery = query(usersRef, orderBy('coins', 'desc'));
+      const allUsersQuery = query(usersRef, orderBy("coins", "desc"));
       const allUsersSnapshot = await getDocs(allUsersQuery);
 
       let currentRank = 0;
@@ -247,7 +250,7 @@ class LeaderboardApiService {
 
       allUsersSnapshot.docs.forEach((docSnap, index) => {
         const data = docSnap.data();
-        
+
         // Skip users who opted out
         if (data.preferences?.privacy?.showOnLeaderboard === false) {
           return;
@@ -264,15 +267,15 @@ class LeaderboardApiService {
         if (Math.abs(rank - currentRank) <= 5 || currentRank === 0) {
           nearbyCompetitors.push({
             userId: docSnap.id,
-            username: data.username || 'Anonymous Champion',
-            avatarUrl: data.avatarUrl || '',
+            username: data.username || "Anonymous Champion",
+            avatarUrl: data.avatarUrl || "",
             score: data.coins || 0,
             rank,
             change: 0, // TODO: Calculate from historical data
             level: data.level || 1,
             badges: (data.badges || []).map((b: any) => b.id),
             location: data.location,
-            lastActive: data.lastActive || Timestamp.now()
+            lastActive: data.lastActive || Timestamp.now(),
           });
         }
       });
@@ -283,11 +286,11 @@ class LeaderboardApiService {
       // Get rank history (TODO: Implement historical tracking)
       const rankHistory: RankHistoryEntry[] = [
         {
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           rank: currentRank,
           score: userData.coins || 0,
-          change: 0
-        }
+          change: 0,
+        },
       ];
 
       const userRankData: UserRankData = {
@@ -298,22 +301,21 @@ class LeaderboardApiService {
         weeklyRank: currentRank, // TODO: Implement weekly rankings
         monthlyRank: currentRank, // TODO: Implement monthly rankings
         dailyRank: currentRank, // TODO: Implement daily rankings
-        rankHistory
+        rankHistory,
       };
 
       return {
         success: true,
         data: userRankData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      console.error('Error fetching user rank:', error);
+      console.error("Error fetching user rank:", error);
       return {
         success: false,
-        error: 'FETCH_FAILED',
-        message: 'Failed to fetch user rank data',
-        timestamp: new Date().toISOString()
+        error: "FETCH_FAILED",
+        message: "Failed to fetch user rank data",
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -322,20 +324,23 @@ class LeaderboardApiService {
    * GET /api/leaderboard/categories
    * Get leaderboard for specific categories
    */
-  async getCategoryLeaderboard(category: string, limit: number = 50): Promise<ApiResponse<LeaderboardData>> {
+  async getCategoryLeaderboard(
+    category: string,
+    limit: number = 50
+  ): Promise<ApiResponse<LeaderboardData>> {
     try {
       // Get all themes for the category
       const themesRef = collection(db, `${getBasePath()}/themes`);
       const categoryThemesQuery = query(
         themesRef,
-        where('category', '==', category),
-        where('isActive', '==', true)
+        where("category", "==", category),
+        where("isActive", "==", true)
       );
       const themesSnapshot = await getDocs(categoryThemesQuery);
 
       // Collect all task IDs for this category
       const categoryTaskIds: string[] = [];
-      themesSnapshot.docs.forEach(doc => {
+      themesSnapshot.docs.forEach((doc) => {
         const themeData = doc.data();
         const tasks = themeData.tasks || [];
         tasks.forEach((task: any) => {
@@ -350,9 +355,9 @@ class LeaderboardApiService {
             entries: [],
             totalPlayers: 0,
             lastUpdated: new Date().toISOString(),
-            period: 'all-time'
+            period: "all-time",
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -366,20 +371,20 @@ class LeaderboardApiService {
         categoryScore: number;
       }> = [];
 
-      usersSnapshot.docs.forEach(doc => {
+      usersSnapshot.docs.forEach((doc) => {
         const userData = doc.data();
         const completedTasks = userData.completedTasks || [];
-        
+
         // Calculate score for this category
-        const categoryCompletedTasks = completedTasks.filter((taskId: string) => 
+        const categoryCompletedTasks = completedTasks.filter((taskId: string) =>
           categoryTaskIds.includes(taskId)
         );
-        
+
         if (categoryCompletedTasks.length > 0) {
           categoryScores.push({
             userId: doc.id,
             userData,
-            categoryScore: categoryCompletedTasks.length
+            categoryScore: categoryCompletedTasks.length,
           });
         }
       });
@@ -392,15 +397,15 @@ class LeaderboardApiService {
         .slice(0, limit)
         .map((item, index) => ({
           userId: item.userId,
-          username: item.userData.username || 'Anonymous Champion',
-          avatarUrl: item.userData.avatarUrl || '',
+          username: item.userData.username || "Anonymous Champion",
+          avatarUrl: item.userData.avatarUrl || "",
           score: item.categoryScore,
           rank: index + 1,
           change: 0,
           level: item.userData.level || 1,
           badges: (item.userData.badges || []).map((b: any) => b.id),
           location: item.userData.location,
-          lastActive: item.userData.lastActive || Timestamp.now()
+          lastActive: item.userData.lastActive || Timestamp.now(),
         }));
 
       return {
@@ -409,18 +414,17 @@ class LeaderboardApiService {
           entries,
           totalPlayers: categoryScores.length,
           lastUpdated: new Date().toISOString(),
-          period: 'all-time'
+          period: "all-time",
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      console.error('Error fetching category leaderboard:', error);
+      console.error("Error fetching category leaderboard:", error);
       return {
         success: false,
-        error: 'FETCH_FAILED',
-        message: 'Failed to fetch category leaderboard',
-        timestamp: new Date().toISOString()
+        error: "FETCH_FAILED",
+        message: "Failed to fetch category leaderboard",
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -429,7 +433,9 @@ class LeaderboardApiService {
    * GET /api/leaderboard/friends
    * Get leaderboard for user's friends
    */
-  async getFriendsLeaderboard(userId: string): Promise<ApiResponse<LeaderboardData>> {
+  async getFriendsLeaderboard(
+    userId: string
+  ): Promise<ApiResponse<LeaderboardData>> {
     try {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       const userDoc = await getDoc(userRef);
@@ -437,9 +443,9 @@ class LeaderboardApiService {
       if (!userDoc.exists()) {
         return {
           success: false,
-          error: 'USER_NOT_FOUND',
-          message: 'User not found',
-          timestamp: new Date().toISOString()
+          error: "USER_NOT_FOUND",
+          message: "User not found",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -453,23 +459,23 @@ class LeaderboardApiService {
             entries: [],
             totalPlayers: 0,
             lastUpdated: new Date().toISOString(),
-            period: 'all-time'
+            period: "all-time",
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       }
 
       // Get friends data
       const friendsData: Array<{ userId: string; userData: any }> = [];
-      
+
       for (const friendId of friendsList) {
         const friendRef = doc(db, `${getBasePath()}/users/${friendId}`);
         const friendDoc = await getDoc(friendRef);
-        
+
         if (friendDoc.exists()) {
           friendsData.push({
             userId: friendId,
-            userData: friendDoc.data()
+            userData: friendDoc.data(),
           });
         }
       }
@@ -477,28 +483,30 @@ class LeaderboardApiService {
       // Include current user
       friendsData.push({
         userId,
-        userData
+        userData,
       });
 
       // Sort by coins
-      friendsData.sort((a, b) => (b.userData.coins || 0) - (a.userData.coins || 0));
+      friendsData.sort(
+        (a, b) => (b.userData.coins || 0) - (a.userData.coins || 0)
+      );
 
       // Create leaderboard entries
       const entries: LeaderboardEntry[] = friendsData.map((friend, index) => ({
         userId: friend.userId,
-        username: friend.userData.username || 'Anonymous Champion',
-        avatarUrl: friend.userData.avatarUrl || '',
+        username: friend.userData.username || "Anonymous Champion",
+        avatarUrl: friend.userData.avatarUrl || "",
         score: friend.userData.coins || 0,
         rank: index + 1,
         change: 0,
         level: friend.userData.level || 1,
         badges: (friend.userData.badges || []).map((b: any) => b.id),
         location: friend.userData.location,
-        lastActive: friend.userData.lastActive || Timestamp.now()
+        lastActive: friend.userData.lastActive || Timestamp.now(),
       }));
 
       // Find user's entry
-      const userEntry = entries.find(entry => entry.userId === userId);
+      const userEntry = entries.find((entry) => entry.userId === userId);
 
       return {
         success: true,
@@ -507,25 +515,27 @@ class LeaderboardApiService {
           userEntry,
           totalPlayers: entries.length,
           lastUpdated: new Date().toISOString(),
-          period: 'all-time'
+          period: "all-time",
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
-      console.error('Error fetching friends leaderboard:', error);
+      console.error("Error fetching friends leaderboard:", error);
       return {
         success: false,
-        error: 'FETCH_FAILED',
-        message: 'Failed to fetch friends leaderboard',
-        timestamp: new Date().toISOString()
+        error: "FETCH_FAILED",
+        message: "Failed to fetch friends leaderboard",
+        timestamp: new Date().toISOString(),
       };
     }
   }
 
   // Private helper methods
 
-  private async calculateCategoryRanks(userId: string, userData: any): Promise<Record<string, number>> {
+  private async calculateCategoryRanks(
+    userId: string,
+    userData: any
+  ): Promise<Record<string, number>> {
     const categoryRanks: Record<string, number> = {};
 
     try {
@@ -536,16 +546,16 @@ class LeaderboardApiService {
       const categories = new Set<string>();
       const categoryTaskMap: Record<string, string[]> = {};
 
-      themesSnapshot.docs.forEach(doc => {
+      themesSnapshot.docs.forEach((doc) => {
         const themeData = doc.data();
         const category = themeData.category;
-        
+
         if (category) {
           categories.add(category);
           if (!categoryTaskMap[category]) {
             categoryTaskMap[category] = [];
           }
-          
+
           const tasks = themeData.tasks || [];
           tasks.forEach((task: any) => {
             categoryTaskMap[category].push(task.id);
@@ -555,16 +565,20 @@ class LeaderboardApiService {
 
       // Calculate rank for each category
       for (const category of categories) {
-        const categoryLeaderboard = await this.getCategoryLeaderboard(category, 1000);
-        
+        const categoryLeaderboard = await this.getCategoryLeaderboard(
+          category,
+          1000
+        );
+
         if (categoryLeaderboard.success && categoryLeaderboard.data) {
-          const userEntry = categoryLeaderboard.data.entries.find(entry => entry.userId === userId);
+          const userEntry = categoryLeaderboard.data.entries.find(
+            (entry) => entry.userId === userId
+          );
           categoryRanks[category] = userEntry?.rank || 0;
         }
       }
-
     } catch (error) {
-      console.error('Error calculating category ranks:', error);
+      console.error("Error calculating category ranks:", error);
     }
 
     return categoryRanks;

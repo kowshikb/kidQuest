@@ -1,301 +1,425 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  Trophy, 
-  Target, 
-  RefreshCw, 
-  AlertCircle,
-  CheckCircle,
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Target,
+  Award,
+  BookOpen,
   Clock,
-  Award
-} from 'lucide-react';
-import { QuestProvider, useQuestContext } from '../contexts/QuestContext';
-import QuestCard from '../components/QuestCard';
-import QuestFilters from '../components/QuestFilters';
-import { useAuth } from '../contexts/AuthContext';
-import { useSound } from '../contexts/SoundContext';
+  Star,
+  ChevronRight,
+  Filter,
+  Grid3X3,
+  List,
+  Search,
+  Users,
+  Trophy,
+  Sparkles,
+  Map,
+  RefreshCw,
+  CheckCircle,
+  Zap,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useSound } from "../contexts/SoundContext";
+import { useQuests } from "../hooks/useQuests";
+import { useAppStats } from "../hooks/useAppStats";
+import { QuestTheme, QuestTask } from "../api/questsApi";
+import EnhancedQuestFilters from "../components/EnhancedQuestFilters";
+import QuestCard from "../components/QuestCard";
+import UnifiedLoader from "../components/UnifiedLoader";
+import UnifiedBackground from "../components/UnifiedBackground";
+import Pagination from "../components/Pagination";
+import KidFriendlyLoader from "../components/KidFriendlyLoader";
 
-const QuestsPageContent: React.FC = () => {
-  const { 
-    themes, 
-    userProgress, 
-    loading, 
-    error, 
-    refreshQuests, 
-    filterThemes,
-    retryCount,
-    lastUpdated 
-  } = useQuestContext();
-  const { userProfile } = useAuth();
-  const { playSound } = useSound();
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  isLoading?: boolean;
+}
 
-  const [filters, setFilters] = useState({
-    category: null as string | null,
-    difficulty: null as string | null,
-    searchTerm: null as string | null
-  });
+const StatCard: React.FC<StatCardProps> = ({
+  icon,
+  label,
+  value,
+  isLoading,
+}) => {
+  return (
+    <motion.div
+      className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20"
+      whileHover={{ scale: 1.02, y: -2 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    >
+      <div className="flex items-center space-x-4">
+        <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg">
+          {icon}
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
+          {isLoading ? (
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500 mr-2"></div>
+              <span className="text-sm text-gray-500">Loading...</span>
+            </div>
+          ) : (
+            <p className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              {value}
+            </p>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
-  const [filteredThemes, setFilteredThemes] = useState(themes);
+const QuestsPage: React.FC = () => {
+  // Filter and pagination states
+  const [filters, setFilters] = useState<any>({});
+  const [currentView, setCurrentView] = useState<"grid" | "list">("grid");
+  const [currentSort, setCurrentSort] = useState<string>("name-asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [selectedTheme, setSelectedTheme] = useState<QuestTheme | null>(null);
 
-  // Update filtered themes when themes or filters change
+  // ✅ PERFORMANCE FIX: Memoize quest options to prevent unnecessary re-renders
+  const questOptions = useMemo(() => {
+    const [sortBy, sortDirection] = currentSort.split("-");
+    return {
+      ...filters,
+      sortBy,
+      sortDirection: sortDirection as "asc" | "desc",
+      // ✅ FIX: Map searchTerm to search parameter for API compatibility
+      search: filters.searchTerm || undefined,
+      // Remove searchTerm to avoid confusion in API
+      searchTerm: undefined,
+    };
+  }, [filters, currentSort]);
+
+  // ✅ PERFORMANCE FIX: Connect to the useQuests hook with stable options and faster loading
+  const { themes, userProgress, loading, error, completeTask, refreshQuests } =
+    useQuests(questOptions);
+
+  const stats = useAppStats();
+  const { refresh: refreshStats } = stats;
+
+  // ✅ PERFORMANCE FIX: Early loading state with instant feedback
+  const [initialLoad, setInitialLoad] = useState(true);
+
   useEffect(() => {
-    const filtered = filterThemes(filters.category, filters.difficulty, filters.searchTerm);
-    setFilteredThemes(filtered);
-  }, [themes, filters, filterThemes]);
+    if (!loading && initialLoad) {
+      setInitialLoad(false);
+    }
+  }, [loading, initialLoad]);
+
+  const handleCompleteTask = async (
+    taskId: string,
+    themeId: string,
+    coinReward: number
+  ) => {
+    const success = await completeTask(taskId, themeId, coinReward);
+    if (success) {
+      console.log("🔄 Refreshing quest stats after task completion...");
+      await refreshStats();
+      console.log("✅ Quest stats refreshed successfully");
+    }
+  };
+
+  // ✅ FIX: Apply client-side search filtering for accurate count
+  const filteredThemes = useMemo(() => {
+    if (!filters.searchTerm) return themes;
+
+    const searchLower = filters.searchTerm.toLowerCase();
+    return themes.filter((theme) => {
+      const nameMatch = theme.name?.toLowerCase().includes(searchLower);
+      const descriptionMatch = theme.description
+        ?.toLowerCase()
+        .includes(searchLower);
+      const categoryMatch = theme.category?.toLowerCase().includes(searchLower);
+      return nameMatch || descriptionMatch || categoryMatch;
+    });
+  }, [themes, filters.searchTerm]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredThemes.length / itemsPerPage);
+  const paginatedThemes = filteredThemes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
 
-  const handleRefresh = async () => {
-    playSound('click');
-    await refreshQuests();
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Calculate overall progress
-  const overallProgress = userProgress ? {
-    totalTasks: themes.reduce((sum, theme) => sum + theme.totalTasks, 0),
-    completedTasks: userProgress.totalTasksCompleted,
-    totalRewards: themes.reduce((sum, theme) => sum + theme.totalRewards, 0),
-    earnedRewards: userProgress.totalCoinsEarned,
-    completionPercentage: themes.reduce((sum, theme) => sum + theme.totalTasks, 0) > 0 
-      ? (userProgress.totalTasksCompleted / themes.reduce((sum, theme) => sum + theme.totalTasks, 0)) * 100 
-      : 0
-  } : null;
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
-  return (
-    <div className="py-6">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <motion.h1
-          className="text-3xl md:text-4xl font-bold text-purple-900 mb-2"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-        >
-          Magical Quests
-        </motion.h1>
-        <motion.p
-          className="text-purple-600"
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          Embark on epic learning adventures and earn legendary rewards!
-        </motion.p>
-      </div>
+  const handleSelectTheme = (theme: QuestTheme) => {
+    setSelectedTheme(theme);
+  };
 
-      {/* Overall Progress Stats */}
-      {overallProgress && (
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="bg-white rounded-2xl p-4 shadow-md border-2 border-purple-100">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-3">
-                <Target size={20} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-purple-600">Tasks Completed</p>
-                <p className="text-xl font-bold text-purple-900">
-                  {overallProgress.completedTasks}/{overallProgress.totalTasks}
-                </p>
-              </div>
-            </div>
-          </div>
+  const handleCloseDetail = () => {
+    setSelectedTheme(null);
+  };
 
-          <div className="bg-white rounded-2xl p-4 shadow-md border-2 border-purple-100">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 2a6 6 0 100 12 6 6 0 000-12z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-yellow-600">Coins Earned</p>
-                <p className="text-xl font-bold text-yellow-700">
-                  {overallProgress.earnedRewards}
-                </p>
-              </div>
-            </div>
-          </div>
+  // ✅ PERFORMANCE FIX: Show optimistic loading only on initial load, faster subsequent loads
+  if (initialLoad && loading) {
+    return (
+      <UnifiedLoader
+        title="Loading Your Quests"
+        subtitle="Finding the perfect adventures for you!"
+        showProgress={true}
+      />
+    );
+  }
 
-          <div className="bg-white rounded-2xl p-4 shadow-md border-2 border-purple-100">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                <CheckCircle size={20} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-green-600">Progress</p>
-                <p className="text-xl font-bold text-green-700">
-                  {overallProgress.completionPercentage.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-md border-2 border-purple-100">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center mr-3">
-                <Trophy size={20} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-indigo-600">Available Quests</p>
-                <p className="text-xl font-bold text-indigo-700">
-                  {themes.length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mb-8"
-      >
-        <QuestFilters
-          onFilterChange={handleFilterChange}
-          activeFilters={filters}
-        />
-      </motion.div>
-
-      {/* Status Bar */}
-      <motion.div
-        className="flex items-center justify-between mb-6 p-4 bg-white rounded-2xl shadow-md border-2 border-purple-100"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center text-purple-600">
-            <Sparkles size={18} className="mr-2" />
-            <span className="font-medium">
-              {filteredThemes.length} quest{filteredThemes.length !== 1 ? 's' : ''} available
-            </span>
-          </div>
-          
-          {lastUpdated && (
-            <div className="flex items-center text-gray-500 text-sm">
-              <Clock size={14} className="mr-1" />
-              <span>Updated {new Date(lastUpdated).toLocaleTimeString()}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {retryCount > 0 && (
-            <div className="flex items-center text-orange-600 text-sm">
-              <AlertCircle size={16} className="mr-1" />
-              <span>Retrying... ({retryCount}/3)</span>
-            </div>
-          )}
-          
-          <motion.button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="p-2 bg-purple-100 text-purple-600 rounded-full hover:bg-purple-200 transition-colors disabled:opacity-50"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            title="Refresh quests"
+  // ✅ PERFORMANCE FIX: Better error handling with retry options
+  if (error && !loading) {
+    return (
+      <UnifiedBackground>
+        <div className="flex items-center justify-center min-h-screen">
+          <motion.div
+            className="text-center bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg max-w-md mx-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
           >
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* Error State */}
-      {error && (
-        <motion.div
-          className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-8"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="flex items-center">
-            <AlertCircle size={24} className="text-red-600 mr-3" />
-            <div>
-              <h3 className="text-lg font-bold text-red-800">Quest Loading Error</h3>
-              <p className="text-red-600">{error}</p>
-              <button
-                onClick={handleRefresh}
-                className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            <div className="text-red-500 text-6xl mb-4">😵</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              Quest Loading Failed
+            </h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="flex flex-col gap-3">
+              <motion.button
+                onClick={refreshQuests}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Try Again
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Loading State */}
-      {loading && themes.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-purple-800">Loading your magical quests...</p>
-        </div>
-      )}
-
-      {/* Quests Grid */}
-      {!loading && filteredThemes.length === 0 && !error ? (
-        <div className="text-center py-12">
-          <div className="inline-block p-4 rounded-full bg-purple-100 mb-4">
-            <Sparkles size={32} className="text-purple-600" />
-          </div>
-          <h3 className="text-xl font-bold text-purple-900 mb-2">No Quests Found</h3>
-          <p className="text-purple-600 mb-6">
-            {Object.values(filters).some(Boolean) 
-              ? "Try adjusting your search or filters to find more quests!"
-              : "No quests are available right now. Check back soon for new adventures!"
-            }
-          </p>
-          {Object.values(filters).some(Boolean) && (
-            <button
-              onClick={() => setFilters({ category: null, difficulty: null, searchTerm: null })}
-              className="px-6 py-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors"
-            >
-              Clear All Filters
-            </button>
-          )}
-        </div>
-      ) : (
-        <motion.div
-          className="space-y-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <AnimatePresence mode="wait">
-            {filteredThemes.map((theme, index) => (
-              <motion.div
-                key={theme.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
+              </motion.button>
+              <motion.button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <QuestCard theme={theme} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )}
-    </div>
-  );
-};
+                Refresh Page
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      </UnifiedBackground>
+    );
+  }
 
-const QuestsPage: React.FC = () => {
   return (
-    <QuestProvider enableRealTimeUpdates={true}>
-      <QuestsPageContent />
-    </QuestProvider>
+    <UnifiedBackground>
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Header */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            Quest Adventures
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Embark on magical learning journeys! Complete quests to unlock new
+            skills, earn rewards, and level up your knowledge.
+          </p>
+        </motion.div>
+
+        {/* Enhanced Stats Grid */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <StatCard
+            icon={<Target className="w-8 h-8 text-indigo-500" />}
+            label="Available Quests"
+            value={stats.availableQuests}
+            isLoading={stats.loading.quests}
+          />
+          <StatCard
+            icon={<CheckCircle className="w-8 h-8 text-green-500" />}
+            label="Quests Completed"
+            value={stats.completedQuests}
+            isLoading={stats.loading.quests}
+          />
+          <StatCard
+            icon={<Sparkles className="w-8 h-8 text-yellow-500" />}
+            label="Coins from Quests"
+            value={stats.coinsFromQuests}
+            isLoading={stats.loading.quests}
+          />
+          <StatCard
+            icon={<Zap className="w-8 h-8 text-purple-500" />}
+            label="Tasks Completed"
+            value={`${stats.questTasksCompleted} / ${stats.totalQuestTasks}`}
+            isLoading={stats.loading.quests}
+          />
+        </motion.div>
+
+        {/* Enhanced Filters */}
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <EnhancedQuestFilters
+            onFilterChange={handleFilterChange}
+            onViewChange={setCurrentView}
+            onSortChange={(sort) => setCurrentSort(`${sort}-asc`)}
+            activeFilters={filters}
+            currentView={currentView}
+            currentSort={currentSort.split("-")[0]}
+            totalItems={filteredThemes.length}
+            className="mb-8"
+          />
+        </motion.div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
+              >
+                <div className="animate-pulse">
+                  <div className="h-48 bg-gray-200 rounded-xl mb-4"></div>
+                  <div className="h-6 bg-gray-200 rounded-lg mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded-lg mb-4"></div>
+                  <div className="flex space-x-2">
+                    <div className="h-8 bg-gray-200 rounded-lg flex-1"></div>
+                    <div className="h-8 bg-gray-200 rounded-lg flex-1"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No Results State */}
+        {filteredThemes.length === 0 && !loading && (
+          <motion.div
+            className="text-center py-16"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="text-6xl mb-4">
+              {filters.searchTerm ? "🔍" : "🗺️"}
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              {filters.searchTerm
+                ? `No quests found for "${filters.searchTerm}"`
+                : "No quests found"}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {filters.searchTerm
+                ? "Try searching with different keywords or check your spelling!"
+                : "Try adjusting your filters to discover more amazing quests!"}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {filters.searchTerm && (
+                <motion.button
+                  onClick={() => {
+                    setFilters({ ...filters, searchTerm: null });
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Clear Search
+                </motion.button>
+              )}
+              <motion.button
+                onClick={() => setFilters({})}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Clear All Filters
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quest Grid/List */}
+        {!loading && paginatedThemes.length > 0 && (
+          <>
+            <motion.div
+              className={`${
+                currentView === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  : "space-y-6"
+              } mb-12`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+            >
+              <AnimatePresence>
+                {!loading &&
+                  paginatedThemes.map((theme) => (
+                    <motion.div
+                      key={theme.id}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <QuestCard
+                        theme={theme}
+                        completedTasks={userProgress?.completedTasks || []}
+                        onCompleteTask={(task) =>
+                          handleCompleteTask(task.id, theme.id, task.coinReward)
+                        }
+                      />
+                    </motion.div>
+                  ))}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Pagination */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+            >
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={themes.length}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
+              />
+            </motion.div>
+          </>
+        )}
+      </div>
+    </UnifiedBackground>
   );
 };
 

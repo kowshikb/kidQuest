@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
 import {
   signInAnonymously,
@@ -26,6 +27,7 @@ import {
 import { auth, db, getBasePath } from "../firebase/config";
 import { useModal } from "./ModalContext";
 import { useSound } from "./SoundContext";
+import { userApi } from "../api/userApi";
 
 const AVATAR_OPTIONS = [
   "https://images.pexels.com/photos/1416736/pexels-photo-1416736.jpeg?auto=compress&cs=tinysrgb&w=150",
@@ -51,6 +53,7 @@ interface UserProfile {
   username: string;
   avatarUrl: string;
   coins: number;
+  age?: number;
   // ✅ DYNAMIC LEVEL SYSTEM - All calculated and stored in DB
   level: number;
   experience: number;
@@ -82,6 +85,7 @@ interface AuthContextType {
   addCompletedTask: (taskId: string, coinsEarned: number) => Promise<void>;
   addFriend: (friendId: string) => Promise<void>;
   removeFriend: (friendId: string) => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 // ✅ FIXED MATH - Dynamic level calculation functions
@@ -112,6 +116,7 @@ const defaultUserProfile: UserProfile = {
   username: "New Champion",
   avatarUrl: AVATAR_OPTIONS[0],
   coins: 0,
+  age: 10,
   // ✅ DYNAMIC LEVEL SYSTEM - Default values
   level: 1,
   experience: 0,
@@ -153,7 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      
+
       if (user) {
         // Start profile fetch but don't wait for it to complete before setting loading to false
         fetchUserProfileOptimized(user.uid);
@@ -162,12 +167,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setUserProfile(null);
       }
-      
+
       // Set loading to false immediately after auth state is determined
       setLoading(false);
     });
     return unsubscribe;
   }, []);
+
+  const refreshUserProfile = async () => {
+    if (currentUser) {
+      console.log("🔄 Refreshing user profile...");
+      await fetchUserProfileOptimized(currentUser.uid);
+    }
+  };
 
   // ✅ AUTOMATIC CHAMPION NAME UPDATE - Helper function
   const updateExplorerToChampion = (profile: UserProfile): UserProfile => {
@@ -175,7 +187,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedUsername = profile.username.replace(/^Explorer/, "Champion");
       return {
         ...profile,
-        username: updatedUsername
+        username: updatedUsername,
       };
     }
     return profile;
@@ -184,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ✅ FIXED MATH - Update level data based on total experience
   const updateLevelData = (profile: UserProfile): UserProfile => {
     const totalExp = profile.totalExperience || profile.coins || 0; // Use coins as experience if totalExperience not set
-    
+
     return {
       ...profile,
       totalExperience: totalExp,
@@ -199,16 +211,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUserProfileOptimized = async (userId: string) => {
     try {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
       );
-      
+
       const fetchPromise = getDoc(userRef);
-      
+
       try {
-        const userSnap = await Promise.race([fetchPromise, timeoutPromise]) as any;
-        
+        const userSnap = (await Promise.race([
+          fetchPromise,
+          timeoutPromise,
+        ])) as any;
+
         if (userSnap.exists()) {
           const profileData = userSnap.data() as UserProfile;
           let completeProfile = {
@@ -224,15 +239,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // ✅ AUTOMATIC FIX: Update Explorer usernames to Champion
           const originalUsername = completeProfile.username;
           completeProfile = updateExplorerToChampion(completeProfile);
-          
+
           // ✅ FIXED MATH: Update level data with correct calculations
           completeProfile = updateLevelData(completeProfile);
-          
+
           // If username or level data was updated, save it to the database
-          const needsUpdate = originalUsername !== completeProfile.username || 
-                             !profileData.level || 
-                             !profileData.totalExperience;
-          
+          const needsUpdate =
+            originalUsername !== completeProfile.username ||
+            !profileData.level ||
+            !profileData.totalExperience;
+
           if (needsUpdate) {
             console.log(`Updating profile data for user ${userId}`);
             try {
@@ -245,7 +261,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 rankTitle: completeProfile.rankTitle,
               });
             } catch (updateError) {
-              console.warn("Could not update profile in database:", updateError);
+              console.warn(
+                "Could not update profile in database:",
+                updateError
+              );
             }
           }
 
@@ -271,7 +290,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       userId: userId,
       friendlyUserId: generateFriendlyUserId(),
       username: `Champion${Math.floor(Math.random() * 10000)}`,
-      avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
+      avatarUrl:
+        AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
       createdAt: serverTimestamp(),
       lastActive: serverTimestamp(),
     };
@@ -287,11 +307,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         userId: userId,
         friendlyUserId: friendlyUserId,
         username: `Champion${Math.floor(Math.random() * 10000)}`,
-        avatarUrl: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
+        avatarUrl:
+          AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
         createdAt: serverTimestamp(),
         lastActive: serverTimestamp(),
       };
-      
+
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       await setDoc(userRef, newProfile);
       setUserProfile(newProfile);
@@ -321,15 +342,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // ✅ AUTOMATIC FIX: Update Explorer usernames to Champion
         const originalUsername = completeProfile.username;
         completeProfile = updateExplorerToChampion(completeProfile);
-        
+
         // ✅ FIXED MATH: Update level data with correct calculations
         completeProfile = updateLevelData(completeProfile);
-        
+
         // If username or level data was updated, save it to the database
-        const needsUpdate = originalUsername !== completeProfile.username || 
-                           !profileData.level || 
-                           !profileData.totalExperience;
-        
+        const needsUpdate =
+          originalUsername !== completeProfile.username ||
+          !profileData.level ||
+          !profileData.totalExperience;
+
         if (needsUpdate) {
           console.log(`Background update for user ${userId}`);
           try {
@@ -342,7 +364,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               rankTitle: completeProfile.rankTitle,
             });
           } catch (updateError) {
-            console.warn("Could not update profile in background:", updateError);
+            console.warn(
+              "Could not update profile in background:",
+              updateError
+            );
           }
         }
 
@@ -580,10 +605,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!currentUser) return;
     try {
-      const userRef = doc(db, `${getBasePath()}/users/${currentUser.uid}`);
-      await updateDoc(userRef, data);
-      setUserProfile((prev) => (prev ? { ...prev, ...data } : null));
-      playSound("success");
+      // Use the new API service
+      const response = await userApi.updateUserProfile(currentUser.uid, {
+        username: data.username,
+        age: data.age,
+        avatarUrl: data.avatarUrl,
+        location: data.location,
+      });
+
+      if (response.success && response.data) {
+        setUserProfile(response.data);
+        playSound("success");
+      } else {
+        throw new Error(response.message || "Failed to update profile");
+      }
     } catch (error) {
       console.error("Profile update error:", error);
       showModal({
@@ -594,53 +629,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ FIXED MATH - Update experience and level when completing tasks
-  const addCompletedTask = async (taskId: string, coinsEarned: number) => {
-    if (!currentUser || !userProfile) return;
-    try {
-      if (userProfile.completedTasks.includes(taskId)) return;
-
-      const updatedTasks = [...userProfile.completedTasks, taskId];
-      const updatedCoins = userProfile.coins + coinsEarned;
-      
-      // ✅ FIXED MATH - Calculate new level data correctly
-      const newTotalExperience = updatedCoins; // Using coins as experience points
-      const newLevel = calculateLevel(newTotalExperience);
-      const newExperience = calculateExperienceInCurrentLevel(newTotalExperience); // ✅ CORRECT: 0-99 progress in current level
-      const newExperienceToNext = calculateExperienceToNextLevel(newTotalExperience); // ✅ CORRECT: XP needed for next level
-      const newRankTitle = getRankTitle(newLevel);
-
-      const userRef = doc(db, `${getBasePath()}/users/${currentUser.uid}`);
-
-      // ✅ SAVE ALL LEVEL DATA TO DATABASE
-      await updateDoc(userRef, {
-        completedTasks: updatedTasks,
-        coins: updatedCoins,
-        totalExperience: newTotalExperience,
-        level: newLevel,
-        experience: newExperience,
-        experienceToNextLevel: newExperienceToNext,
-        rankTitle: newRankTitle,
-      });
+  // ✅ NEW: Optimistic coin update for instant UI feedback
+  const updateCoinsOptimistically = useCallback(
+    (coinsToAdd: number) => {
+      if (!userProfile) return;
 
       setUserProfile((prev) =>
         prev
           ? {
               ...prev,
-              completedTasks: updatedTasks,
-              coins: updatedCoins,
-              totalExperience: newTotalExperience,
-              level: newLevel,
-              experience: newExperience,
-              experienceToNextLevel: newExperienceToNext,
-              rankTitle: newRankTitle,
+              coins: prev.coins + coinsToAdd,
             }
           : null
       );
+    },
+    [userProfile]
+  );
 
+  // Enhanced addCompletedTask with optimistic updates
+  const addCompletedTask = async (
+    taskId: string,
+    coinsEarned: number,
+    source: "quest" | "hobby" | "achievement" = "quest"
+  ) => {
+    if (!currentUser || !userProfile) return;
+
+    try {
+      // ✅ INSTANT FEEDBACK: Update coins immediately for instant UI response
+      updateCoinsOptimistically(coinsEarned);
       playSound("coin");
+
+      // ✅ BACKGROUND API CALL: Handle the actual update asynchronously
+      const response = await userApi.earnCoins({
+        userId: currentUser.uid,
+        coinsEarned,
+        taskId,
+        source,
+      });
+
+      if (response.success && response.data) {
+        // ✅ SYNC WITH SERVER: Update with actual server data
+        await refreshUserProfile();
+
+        const { leveledUp, newLevel, newRankTitle } = response.data;
+
+        // Show level up message if user leveled up
+        if (leveledUp) {
+          showModal({
+            title: "🎉 LEVEL UP! 🎉",
+            message: `Amazing! You've reached Level ${newLevel} and earned the title "${newRankTitle}"!`,
+            type: "success",
+          });
+          playSound("success");
+        }
+      } else {
+        if (response.error === "TASK_ALREADY_COMPLETED") {
+          return; // Silently ignore already completed tasks
+        }
+        // ✅ REVERT OPTIMISTIC UPDATE: If API fails, revert the coin update
+        updateCoinsOptimistically(-coinsEarned);
+        throw new Error(response.message || "Failed to earn coins");
+      }
     } catch (error) {
       console.error("Task completion error:", error);
+      // ✅ REVERT OPTIMISTIC UPDATE: If error occurs, revert the coin update
+      updateCoinsOptimistically(-coinsEarned);
       showModal({
         title: "Task Error",
         message: "Could not mark task as completed.",
@@ -652,25 +705,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const addFriend = async (friendId: string) => {
     if (!currentUser || !userProfile) return;
     try {
-      if (userProfile.friendsList.includes(friendId)) return;
-
-      const updatedFriends = [...userProfile.friendsList, friendId];
-      const userRef = doc(db, `${getBasePath()}/users/${currentUser.uid}`);
-
-      await updateDoc(userRef, {
-        friendsList: updatedFriends,
-      });
-
-      setUserProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              friendsList: updatedFriends,
-            }
-          : null
+      const response = await userApi.updateFriends(
+        currentUser.uid,
+        friendId,
+        "add"
       );
 
-      playSound("success");
+      if (response.success && response.data) {
+        setUserProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                friendsList: response.data || [],
+              }
+            : null
+        );
+        playSound("success");
+      } else {
+        if (response.error === "FRIEND_ALREADY_EXISTS") {
+          return; // Silently ignore if already friends
+        }
+        throw new Error(response.message || "Failed to add friend");
+      }
     } catch (error) {
       console.error("Add friend error:", error);
       showModal({
@@ -684,25 +740,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const removeFriend = async (friendId: string) => {
     if (!currentUser || !userProfile) return;
     try {
-      const updatedFriends = userProfile.friendsList.filter(
-        (id) => id !== friendId
-      );
-      const userRef = doc(db, `${getBasePath()}/users/${currentUser.uid}`);
-
-      await updateDoc(userRef, {
-        friendsList: updatedFriends,
-      });
-
-      setUserProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              friendsList: updatedFriends,
-            }
-          : null
+      const response = await userApi.updateFriends(
+        currentUser.uid,
+        friendId,
+        "remove"
       );
 
-      playSound("click");
+      if (response.success && response.data) {
+        setUserProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                friendsList: response.data || [],
+              }
+            : null
+        );
+        playSound("click");
+      } else {
+        throw new Error(response.message || "Failed to remove friend");
+      }
     } catch (error) {
       console.error("Remove friend error:", error);
       showModal({
@@ -775,6 +831,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     addFriend,
     removeFriend,
     resetPassword,
+    refreshUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

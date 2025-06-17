@@ -143,34 +143,38 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center relative">
+      {/* Fixed Background Layer */}
+      <div className="fixed inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10"></div>
+
       {/* Animated Background Elements */}
-      {Array.from({ length: 10 }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full bg-purple-200 opacity-30"
-          style={
-            {
-              width: `${Math.random() * 50 + 20}px`,
-              height: `${Math.random() * 50 + 20}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              zIndex: 0,
-            } as React.CSSProperties
-          }
-          animate={{
-            y: [0, -20, 0],
-            x: [0, 10, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            delay: Math.random() * 2,
-            duration: Math.random() * 5 + 5,
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-        />
-      ))}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-purple-200 opacity-30"
+            style={
+              {
+                width: `${Math.random() * 50 + 20}px`,
+                height: `${Math.random() * 50 + 20}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              } as React.CSSProperties
+            }
+            animate={{
+              y: [0, -20, 0],
+              x: [0, 10, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              delay: Math.random() * 2,
+              duration: Math.random() * 5 + 5,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+        ))}
+      </div>
 
       <motion.div
         className="relative z-10 max-w-md w-full mx-4"
