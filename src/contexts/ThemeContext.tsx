@@ -83,7 +83,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     difficulty: null as string | null,
     searchTerm: null as string | null,
   });
-  const { showModal } = useModal();
+  // const { showModal } = useModal(); // Removed unused import
 
   // Load themes from backend when provider mounts
   useEffect(() => {
@@ -91,11 +91,27 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     // Try to load from backend first, fallback to mock if needed
     const loadThemes = async () => {
       try {
-        // For now, we'll use mock themes since backend might not be fully set up
-        // TODO: Switch to fetchThemesFromDatabase when backend is ready
-        loadMockThemes();
+        setLoading(true);
+        console.log(
+          "🔄 ThemeProvider: Attempting to fetch themes from database..."
+        );
+
+        // Try to fetch from database first
+        const dbSuccess = await fetchThemesFromDatabase();
+
+        // If database fetch failed or returned no themes, use mock data
+        if (!dbSuccess) {
+          console.log(
+            "📦 ThemeProvider: No themes found in database, loading mock themes..."
+          );
+          loadMockThemes();
+        }
       } catch (error) {
-        console.error("Failed to load themes:", error);
+        console.error(
+          "❌ ThemeProvider: Failed to load themes from database:",
+          error
+        );
+        console.log("📦 ThemeProvider: Falling back to mock themes...");
         loadMockThemes();
       }
     };
@@ -475,12 +491,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   // Fetch themes from Firestore (optional, as fallback)
-  const fetchThemesFromDatabase = async (currentUser: any) => {
-    if (!currentUser) {
-      console.log("No user provided for database fetch");
-      return;
-    }
-
+  const fetchThemesFromDatabase = async (): Promise<boolean> => {
     try {
       setLoading(true);
       console.log("Attempting to fetch themes from Firestore...");
@@ -539,15 +550,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         setThemes(themesData);
         setFilteredThemes(themesData);
         setError(null);
+        return true; // Success
       } else {
-        console.log("No themes found in database, keeping mock themes");
+        console.log("No themes found in database");
+        return false; // No themes found
       }
     } catch (err) {
       console.error("Error fetching themes from database:", err);
-      console.log("Database fetch failed, keeping mock themes");
+      console.log("Database fetch failed");
 
       // Don't show error modal for database issues, just keep using mock themes
       setError(null);
+      return false; // Failure
     } finally {
       setLoading(false);
     }

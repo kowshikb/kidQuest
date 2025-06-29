@@ -96,29 +96,32 @@ const FriendsPage: React.FC = () => {
 
               if (senderSnap.exists()) {
                 const senderData = senderSnap.data();
-                requests.push({
-                  id: docSnap.id,
+                const pendingRequest: FriendRequest = {
                   ...requestData,
+                  id: docSnap.id,
                   fromUsername: senderData.username,
                   fromFriendlyId: senderData.friendlyUserId,
                   fromAvatarUrl: senderData.avatarUrl,
-                });
+                };
+                requests.push(pendingRequest);
               } else {
-                requests.push({
-                  id: docSnap.id,
+                const sentRequest: FriendRequest = {
                   ...requestData,
+                  id: docSnap.id,
                   fromUsername: "Unknown Champion",
                   fromFriendlyId: "Unknown",
-                });
+                };
+                requests.push(sentRequest);
               }
             } catch (error) {
               console.error("Error fetching sender data:", error);
-              requests.push({
-                id: docSnap.id,
+              const request: FriendRequest = {
                 ...requestData,
+                id: docSnap.id,
                 fromUsername: "Unknown Champion",
                 fromFriendlyId: "Unknown",
-              });
+              };
+              requests.push(request);
             }
           }
 
@@ -139,7 +142,7 @@ const FriendsPage: React.FC = () => {
     const unsubscribe = fetchFriendRequests();
     return () => {
       if (unsubscribe) {
-        unsubscribe.then((fn) => fn());
+        unsubscribe.then?.((fn) => fn?.());
       }
     };
   }, [currentUser]);

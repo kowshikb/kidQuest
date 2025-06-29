@@ -3,11 +3,9 @@ import {
   doc,
   getDocs,
   getDoc,
-  setDoc,
   query,
   where,
   orderBy,
-  limit,
   writeBatch,
   Timestamp,
 } from "firebase/firestore";

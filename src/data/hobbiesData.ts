@@ -243,6 +243,7 @@ export const generateHobbies = (): Hobby[] => {
           skills: getHobbySkills(hobbyName),
           popularityRank: hobbyId,
           isActive: true,
+          isLocked: false,
           createdAt: createTimestamp(),
           updatedAt: createTimestamp(),
           totalCoins: levels.reduce((sum, level) => sum + level.totalCoins, 0),

@@ -10,15 +10,17 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SoundProvider } from "./contexts/SoundContext";
 import { ModalProvider } from "./contexts/ModalContext";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import HobbiesPage from "./pages/HobbiesPage";
-import QuestsPage from "./pages/QuestsPage";
-import RoomsPage from "./pages/RoomsPage";
-import RoomDetail from "./pages/RoomDetail";
-import FriendsPage from "./pages/FriendsPage";
-import LeaderboardPage from "./pages/LeaderboardPage";
-import ProfilePage from "./pages/ProfilePage";
+// Lazy load components for better performance
+const Login = React.lazy(() => import("./pages/Login"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const HobbiesPage = React.lazy(() => import("./pages/HobbiesPage"));
+const QuestsPage = React.lazy(() => import("./pages/QuestsPage"));
+const ThemePage = React.lazy(() => import("./pages/ThemePage"));
+const RoomsPage = React.lazy(() => import("./pages/RoomsPage"));
+const RoomDetail = React.lazy(() => import("./pages/RoomDetail"));
+const FriendsPage = React.lazy(() => import("./pages/FriendsPage"));
+const LeaderboardPage = React.lazy(() => import("./pages/LeaderboardPage"));
+const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import Mascot from "./components/Mascot";
@@ -113,89 +115,110 @@ const AppContent: React.FC = () => {
         {currentUser && <Header />}
 
         <main className={`container mx-auto px-4 ${currentUser ? "py-8" : ""}`}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                currentUser ? <Navigate to="/dashboard" replace /> : <Login />
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/hobbies"
-              element={
-                <ProtectedRoute>
-                  <HobbiesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/quests"
-              element={
-                <ProtectedRoute>
-                  <QuestsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rooms"
-              element={
-                <ProtectedRoute>
-                  <RoomsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rooms/:roomId"
-              element={
-                <ProtectedRoute>
-                  <RoomDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/friends"
-              element={
-                <ProtectedRoute>
-                  <FriendsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/leaderboard"
-              element={
-                <ProtectedRoute>
-                  <LeaderboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            {/* Catch all route - redirect to appropriate page */}
-            <Route
-              path="*"
-              element={
-                currentUser ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-          </Routes>
+          <React.Suspense
+            fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-lg text-purple-600">
+                    Loading magical content...
+                  </p>
+                </div>
+              </div>
+            }
+          >
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  currentUser ? <Navigate to="/dashboard" replace /> : <Login />
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/hobbies"
+                element={
+                  <ProtectedRoute>
+                    <HobbiesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/quests"
+                element={
+                  <ProtectedRoute>
+                    <QuestsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/themes"
+                element={
+                  <ProtectedRoute>
+                    <ThemePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rooms"
+                element={
+                  <ProtectedRoute>
+                    <RoomsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rooms/:roomId"
+                element={
+                  <ProtectedRoute>
+                    <RoomDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/friends"
+                element={
+                  <ProtectedRoute>
+                    <FriendsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/leaderboard"
+                element={
+                  <ProtectedRoute>
+                    <LeaderboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Catch all route - redirect to appropriate page */}
+              <Route
+                path="*"
+                element={
+                  currentUser ? (
+                    <Navigate to="/dashboard" replace />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+            </Routes>
+          </React.Suspense>
         </main>
 
         {/* Only show mascot if user is logged in */}

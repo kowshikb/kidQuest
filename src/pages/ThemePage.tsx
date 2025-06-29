@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Check, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { useTheme, Theme, Task } from "../contexts/ThemeContext";
@@ -44,7 +44,7 @@ const ThemePage: React.FC = () => {
   };
 
   // Complete a task
-  const completeTask = async (task: Task, themeId: string) => {
+  const completeTask = async (task: Task) => {
     if (isTaskCompleted(task.id)) return;
 
     playSound("complete");
@@ -486,7 +486,7 @@ const ThemePage: React.FC = () => {
                                 <motion.button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    completeTask(task, theme.id);
+                                    completeTask(task);
                                   }}
                                   disabled={completed}
                                   className={`transition-all duration-200 flex-shrink-0 ${

@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
-  Award,
   Users,
   MessageSquare,
   User,
@@ -11,11 +10,7 @@ import {
   Volume2,
   LogOut,
   Sparkles,
-  Coins,
   Star,
-  Swords,
-  Shield,
-  Smile,
   Bell,
   BookOpen,
   Trophy,
@@ -42,6 +37,7 @@ const Header: React.FC = () => {
   const navItems = [
     { name: "Home", path: "/dashboard", icon: Home },
     { name: "Quests", path: "/quests", icon: Star },
+    { name: "Themes", path: "/themes", icon: Sparkles },
     { name: "Hobbies", path: "/hobbies", icon: BookOpen },
     { name: "Rooms", path: "/rooms", icon: MessageSquare },
     { name: "Friends", path: "/friends", icon: Users },
@@ -63,22 +59,10 @@ const Header: React.FC = () => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
-  // Toggle mobile menu
-  const toggleMenu = () => {
-    playSound("click");
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   // Handle toggle sound
   const handleToggleSound = () => {
     toggleSound();
     playSound("click");
-  };
-
-  // Handle navigate with sound
-  const handleNavigate = (path: string) => {
-    playSound("click");
-    navigate(path);
   };
 
   // Handle sign out

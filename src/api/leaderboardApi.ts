@@ -8,6 +8,8 @@ import {
   startAfter,
   doc,
   getDoc,
+  setDoc,
+  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db, getBasePath } from "../firebase/config";
@@ -283,15 +285,12 @@ class LeaderboardApiService {
       // Calculate category-specific ranks
       const categoryRanks = await this.calculateCategoryRanks(userId, userData);
 
-      // Get rank history (TODO: Implement historical tracking)
-      const rankHistory: RankHistoryEntry[] = [
-        {
-          date: new Date().toISOString().split("T")[0],
-          rank: currentRank,
-          score: userData.coins || 0,
-          change: 0,
-        },
-      ];
+      // Get rank history with proper historical tracking
+      const rankHistory = await this.getRankHistory(
+        userId,
+        currentRank,
+        userData.coins || 0
+      );
 
       const userRankData: UserRankData = {
         currentRank,
@@ -531,6 +530,90 @@ class LeaderboardApiService {
   }
 
   // Private helper methods
+
+  /**
+   * Get and update rank history for a user
+   */
+  private async getRankHistory(
+    userId: string,
+    currentRank: number,
+    currentScore: number
+  ): Promise<RankHistoryEntry[]> {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const rankHistoryRef = doc(db, `${getBasePath()}/rankHistory/${userId}`);
+
+      // Get existing rank history
+      const historyDoc = await getDoc(rankHistoryRef);
+      let existingHistory: RankHistoryEntry[] = [];
+
+      if (historyDoc.exists()) {
+        existingHistory = historyDoc.data().history || [];
+      }
+
+      // Check if we already have today's entry
+      const todayEntryIndex = existingHistory.findIndex(
+        (entry) => entry.date === today
+      );
+
+      let updatedHistory: RankHistoryEntry[] = [...existingHistory];
+
+      if (todayEntryIndex >= 0) {
+        // Update today's entry
+        const yesterdayRank =
+          existingHistory[todayEntryIndex - 1]?.rank || currentRank;
+        updatedHistory[todayEntryIndex] = {
+          date: today,
+          rank: currentRank,
+          score: currentScore,
+          change: yesterdayRank - currentRank, // Positive = rank improved (went down in number)
+        };
+      } else {
+        // Add new entry for today
+        const lastEntry = existingHistory[existingHistory.length - 1];
+        const lastRank = lastEntry?.rank || currentRank;
+
+        const newEntry: RankHistoryEntry = {
+          date: today,
+          rank: currentRank,
+          score: currentScore,
+          change: lastRank - currentRank, // Positive = rank improved
+        };
+
+        updatedHistory.push(newEntry);
+
+        // Keep only last 30 days of history
+        if (updatedHistory.length > 30) {
+          updatedHistory = updatedHistory.slice(-30);
+        }
+      }
+
+      // Update the database with new history
+      await setDoc(
+        rankHistoryRef,
+        {
+          userId,
+          history: updatedHistory,
+          lastUpdated: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      return updatedHistory;
+    } catch (error) {
+      console.error("Error managing rank history:", error);
+
+      // Fallback: return current rank only
+      return [
+        {
+          date: new Date().toISOString().split("T")[0],
+          rank: currentRank,
+          score: currentScore,
+          change: 0,
+        },
+      ];
+    }
+  }
 
   private async calculateCategoryRanks(
     userId: string,

@@ -155,15 +155,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { showModal } = useModal();
   const { playSound } = useSound();
 
+  // 🔒 RACE CONDITION FIX: Prevent concurrent profile operations
+  const profileOperationsLock = new Map<string, Promise<void>>();
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
 
       if (user) {
-        // Start profile fetch but don't wait for it to complete before setting loading to false
-        fetchUserProfileOptimized(user.uid);
-        // Update last active timestamp in background
-        updateLastActiveBackground(user.uid);
+        // 🔒 RACE CONDITION FIX: Ensure only one profile operation at a time per user
+        if (!profileOperationsLock.has(user.uid)) {
+          const profileOperation = initializeUserProfile(user.uid);
+          profileOperationsLock.set(user.uid, profileOperation);
+
+          try {
+            await profileOperation;
+          } catch (error) {
+            console.error("Profile initialization failed:", error);
+          } finally {
+            profileOperationsLock.delete(user.uid);
+          }
+        }
       } else {
         setUserProfile(null);
       }
@@ -173,6 +185,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
     return unsubscribe;
   }, []);
+
+  // 🔒 RACE CONDITION FIX: Synchronized user profile initialization
+  const initializeUserProfile = async (userId: string) => {
+    try {
+      console.log(`🔄 Initializing user profile for ${userId}...`);
+
+      // First, fetch/create the user profile
+      await fetchUserProfileOptimized(userId);
+
+      // Then update last active timestamp
+      await updateLastActiveBackground(userId);
+
+      console.log(`✅ User profile initialized successfully for ${userId}`);
+    } catch (error) {
+      console.error(
+        `❌ Failed to initialize user profile for ${userId}:`,
+        error
+      );
+      throw error;
+    }
+  };
 
   const refreshUserProfile = async () => {
     if (currentUser) {
@@ -298,9 +331,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUserProfile(tempProfile);
   };
 
-  // Background profile creation
+  // Background profile creation with race condition protection
   const createNewUserProfileBackground = async (userId: string) => {
     try {
+      console.log(`🔄 Creating new profile for user ${userId}...`);
+
+      const userRef = doc(db, `${getBasePath()}/users/${userId}`);
+
+      // 🔒 RACE CONDITION FIX: Check if profile was created by another process
+      const existingDoc = await getDoc(userRef);
+      if (existingDoc.exists()) {
+        console.log(
+          `✅ Profile already exists for user ${userId}, using existing profile`
+        );
+        const profileData = existingDoc.data() as UserProfile;
+        let completeProfile = {
+          ...defaultUserProfile,
+          ...profileData,
+          userId: userId,
+        };
+        completeProfile = updateLevelData(completeProfile);
+        setUserProfile(completeProfile);
+        return;
+      }
+
       const friendlyUserId = generateFriendlyUserId();
       const newProfile = {
         ...defaultUserProfile,
@@ -313,11 +367,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         lastActive: serverTimestamp(),
       };
 
-      const userRef = doc(db, `${getBasePath()}/users/${userId}`);
       await setDoc(userRef, newProfile);
       setUserProfile(newProfile);
+      console.log(`✅ New profile created successfully for user ${userId}`);
     } catch (error) {
       console.error("Background profile creation failed:", error);
+      throw error;
     }
   };
 

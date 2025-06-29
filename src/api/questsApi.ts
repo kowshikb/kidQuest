@@ -8,6 +8,7 @@ import {
   orderBy,
   onSnapshot,
   getDoc,
+  runTransaction,
   Timestamp,
   setDoc,
 } from "firebase/firestore";
@@ -789,7 +790,38 @@ class QuestsApiService {
     }
   }
 
+  // 🔒 DUPLICATION FIX: Achievement operations lock to prevent race conditions
+  private achievementLocks = new Map<string, Promise<string[]>>();
+
   private async checkForNewAchievements(
+    userId: string,
+    completedTasks: string[],
+    totalCoins: number
+  ): Promise<string[]> {
+    // 🔒 RACE CONDITION FIX: Ensure only one achievement check per user at a time
+    if (this.achievementLocks.has(userId)) {
+      console.log(
+        `⏳ Achievement check already in progress for user ${userId}, waiting...`
+      );
+      return await this.achievementLocks.get(userId)!;
+    }
+
+    const achievementOperation = this.performAchievementCheck(
+      userId,
+      completedTasks,
+      totalCoins
+    );
+    this.achievementLocks.set(userId, achievementOperation);
+
+    try {
+      const result = await achievementOperation;
+      return result;
+    } finally {
+      this.achievementLocks.delete(userId);
+    }
+  }
+
+  private async performAchievementCheck(
     userId: string,
     completedTasks: string[],
     totalCoins: number
@@ -837,32 +869,64 @@ class QuestsApiService {
 
     try {
       const userRef = doc(db, `${getBasePath()}/users/${userId}`);
-      const userDoc = await getDoc(userRef);
 
-      if (!userDoc.exists()) return newAchievements;
+      // 🔒 ATOMIC OPERATION: Use a transaction to prevent duplication
+      const db_transaction = await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
 
-      const userData = userDoc.data();
-      const currentAchievements = userData.achievements || [];
-
-      for (const achievement of achievements) {
-        if (
-          !currentAchievements.includes(achievement.id) &&
-          achievement.condition()
-        ) {
-          newAchievements.push(achievement.id);
+        if (!userDoc.exists()) {
+          console.log(`❌ User ${userId} not found for achievement check`);
+          return [];
         }
-      }
 
-      if (newAchievements.length > 0) {
-        await updateDoc(userRef, {
-          achievements: [...currentAchievements, ...newAchievements],
-        });
-      }
+        const userData = userDoc.data();
+        const currentAchievements = userData.achievements || [];
+        const achievementsToAdd: string[] = [];
+
+        // Check for new achievements
+        for (const achievement of achievements) {
+          if (
+            !currentAchievements.includes(achievement.id) &&
+            achievement.condition()
+          ) {
+            achievementsToAdd.push(achievement.id);
+            console.log(
+              `🏆 New achievement unlocked for ${userId}: ${achievement.name} (${achievement.id})`
+            );
+          }
+        }
+
+        // 🔒 DUPLICATION PREVENTION: Only update if there are truly new achievements
+        if (achievementsToAdd.length > 0) {
+          // Double-check to prevent duplicates (in case of concurrent transactions)
+          const uniqueNewAchievements = achievementsToAdd.filter(
+            (id) => !currentAchievements.includes(id)
+          );
+
+          if (uniqueNewAchievements.length > 0) {
+            const updatedAchievements = [
+              ...currentAchievements,
+              ...uniqueNewAchievements,
+            ];
+            transaction.update(userRef, {
+              achievements: updatedAchievements,
+            });
+
+            console.log(
+              `✅ Added ${uniqueNewAchievements.length} new achievements for user ${userId}`
+            );
+            return uniqueNewAchievements;
+          }
+        }
+
+        return [];
+      });
+
+      return db_transaction;
     } catch (error) {
       console.error("Error checking achievements:", error);
+      return [];
     }
-
-    return newAchievements;
   }
 }
 
